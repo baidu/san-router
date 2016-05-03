@@ -1,0 +1,4 @@
+dep
+node_modules
+doc/api
+test/coverage

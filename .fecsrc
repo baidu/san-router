@@ -1,0 +1,10 @@
+{
+    "files": [
+        "src/**"
+    ],
+    "eslint": {
+        "env": {
+            "es6": true
+        }
+    }
+}
