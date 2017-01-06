@@ -1,4 +1,4 @@
-import router from '../src/main';
+import {router} from '../src/main';
 
 
 
