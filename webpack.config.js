@@ -6,8 +6,11 @@ let config = {
 
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: 'san-router.js',
-        publicPath: "/dist"
+        filename: 'san-router.source.js',
+        publicPath: '/dist',
+        library: 'san-router',
+        libraryTarget: 'umd',
+        umdNamedDefine: true
     },
 
     module: {
