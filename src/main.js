@@ -2,11 +2,12 @@
 import HashLocator from './locator/hash';
 import HTML5Locator from './locator/html5';
 import parseURL from './parse-url';
+import Link from './component/link'
 
 let routeID = 0x5942b;
 let guid = () => (++routeID).toString();
 
-class Router {
+export class Router {
     constructor({mode = 'hash'} = {}) {
         this.routes = [];
         this.routeAlives = [];
@@ -120,7 +121,10 @@ class Router {
     }
 
     setMode(mode) {
-        switch (mode.toLowerCase()) {
+        mode = mode.toLowerCase();
+        this.mode = mode;
+
+        switch (mode) {
             case 'hash':
                 this.locator = new HashLocator();
                 break;
@@ -132,9 +136,7 @@ class Router {
     }
 }
 
-let router = new Router();
-router.Router = Router;
-
-export default router;
+export let router = new Router();
+export {Link};
 
 
