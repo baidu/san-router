@@ -7,6 +7,8 @@ import Link from './component/link'
 let routeID = 0x5942b;
 let guid = () => (++routeID).toString();
 
+export let version = '1.0.0-rc.1';
+
 export class Router {
     constructor({mode = 'hash'} = {}) {
         this.routes = [];
@@ -51,9 +53,9 @@ export class Router {
         while (len--) {
             let routeAlive = this.routeAlives[len];
 
-            if (routeAlive.id === id) {
+            if (routeAlive.id === routeItem.id) {
                 routeAlive.component.data.set('route', e);
-                routeAlive.component.fire('route');
+                routeAlive.component._callHook('route');
                 isUpdateAlive = true;
             }
             else {
@@ -66,7 +68,7 @@ export class Router {
             if (routeItem.Component) {
                 let component = new routeItem.Component();
                 component.data.set('route', e);
-                component.fire('route');
+                component._callHook('route');
 
                 let targetEl = document.querySelector(routeItem.target);
                 targetEl && component.attach(targetEl);
@@ -109,20 +111,36 @@ export class Router {
     }
 
     start() {
-        this.locator.on('redirect', this.locatorRedirectHandler);
-        this.locator.start();
+        if (!this.isStarted) {
+            this.isStarted = true;
+            this.locator.on('redirect', this.locatorRedirectHandler);
+            this.locator.start();
+        }
+
         return this;
     }
 
     stop() {
         this.locator.un('redirect', this.locatorRedirectHandler);
         this.locator.stop();
+        this.isStarted = false;
+
         return this;
     }
 
     setMode(mode) {
         mode = mode.toLowerCase();
+        if (this.mode === mode) {
+            return;
+        }
+
         this.mode = mode;
+
+        let restart = false;
+        if (this.isStarted) {
+            this.stop();
+            restart = true;
+        }
 
         switch (mode) {
             case 'hash':
@@ -130,6 +148,10 @@ export class Router {
                 break;
             case 'html5':
                 this.locator = new HTML5Locator();
+        }
+
+        if (restart) {
+            this.start();
         }
 
         return this;
