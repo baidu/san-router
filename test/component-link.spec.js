@@ -24,8 +24,8 @@ describe('Component Link', () => {
                     .toBeTruthy();
                 expect(location.hash).toBe('#/router-link1');
                 app.dispose();
-                done();
 
+                setTimeout(done, 100);
                 return;
             }
 
@@ -36,7 +36,7 @@ describe('Component Link', () => {
     });
 
     it('in router hash mode, relative path', done => {
-        location.hash = '/router-link2/level1/level2/level3';
+        router.locator.redirect('/router-link2/level1/level2/level3');
 
         setTimeout(() => {
             let App = san.defineComponent({
@@ -58,8 +58,8 @@ describe('Component Link', () => {
                         .toBeTruthy();
                     expect(location.hash).toBe('#/router-link2/level1/b/c');
                     app.dispose();
-                    done();
 
+                    setTimeout(done, 100);
                     return;
                 }
 
@@ -94,8 +94,7 @@ describe('Component Link', () => {
                 app.dispose();
                 history.back();
 
-                setTimeout(done, 1);
-
+                setTimeout(done, 200);
                 return;
             }
 
@@ -131,7 +130,7 @@ describe('Component Link', () => {
                 history.back();
                 history.back();
 
-                setTimeout(done, 1);
+                setTimeout(done, 200);
 
                 return;
             }

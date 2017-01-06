@@ -15,13 +15,21 @@ describe('Hash Locator', () => {
         locator.start();
         location.hash = nextURL();
 
-        setTimeout(() => {done();}, 1)
+        setTimeout(() => {done();}, 50)
     });
     afterEach(() => {
         locator.stop();
         locator = null;
     });
 
+    it('can read current correctly, when location.hash', done => {
+        location.hash = nextURL();
+        setTimeout(() => {
+            expect(locator.current).toBe(currentURL());
+            done();
+        }, 50)
+
+    });
 
     it('should emit redirect event on hash change', done => {
         locator.on('redirect', e => {
