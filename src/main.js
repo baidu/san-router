@@ -7,7 +7,7 @@ import Link from './component/link'
 let routeID = 0x5942b;
 let guid = () => (++routeID).toString();
 
-export let version = '1.0.0-rc.2';
+export let version = '1.0.0';
 
 export class Router {
     constructor({mode = 'hash'} = {}) {
