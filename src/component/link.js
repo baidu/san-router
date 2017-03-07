@@ -1,8 +1,17 @@
+/**
+ * san-router
+ * Copyright 2017 Baidu Inc. All rights reserved.
+ *
+ * @file 路由链接的 San 组件
+ * @author errorrik
+ */
+
+
 import {router} from '../main';
 import resolveURL from '../resolve-url';
 
 export default {
-    template: '<a href="{{href}}" onclick="return false;" on-click="clicker($event)"><slot></slot></a>',
+    template: '<a href="{{href}}" onclick="return false;" on-click="clicker($event)" target="{{target}}" class="{{class}}" style="{{style}}"><slot></slot></a>',
 
     clicker(e) {
         let href = this.data.get('href');
@@ -14,33 +23,19 @@ export default {
         e.preventDefault();
     },
 
-    attached() {
-        this.computeHref();
+    computed: {
+        href: function () {
+            let url = this.data.get('to');
+            if (typeof url !== 'string') {
+                return;
+            }
 
-        if (!this._toChanger) {
-            this._toChanger = () => {
-                this.computeHref();
-            };
+            let href = resolveURL(url, router.locator.current);
+            if (router.mode === 'hash') {
+                href = '#' + href;
+            }
 
-            this.watch('to', this._toChanger);
+            return href;
         }
-    },
-
-    disposed() {
-        this._toChanger = null;
-    },
-
-    computeHref() {
-        let url = this.data.get('to');
-        if (typeof url !== 'string') {
-            return;
-        }
-
-        let href = resolveURL(url, router.locator.current);
-        if (router.mode === 'hash') {
-            href = '#' + href;
-        }
-
-        this.data.set('href', href);
     }
 }
