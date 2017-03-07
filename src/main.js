@@ -19,7 +19,7 @@ let guid = () => (++routeID).toString();
  *
  * @type {string}
  */
-export let version = '1.0.0';
+export let version = '1.0.1';
 
 /**
  * 路由器类

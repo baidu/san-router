@@ -1,6 +1,6 @@
 {
   "name": "san-router",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Router for San",
   "scripts": {
     "build": "rm -rf dist && webpack && uglifyjs dist/san-router.source.js -mco dist/san-router.js",
@@ -13,7 +13,7 @@
     "babel-preset-es2015": "^6.18.0",
     "babel-preset-es2016": "^6.16.0",
     "glob": "^7.1.1",
-    "san": "^3.0.1",
+    "san": "^3.0.3-rc.8",
     "uglify-js": "^2.7.5",
     "webpack": "^2.2.0-rc.3",
     "webpack-dev-server": "^2.2.0-rc.0"
