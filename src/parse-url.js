@@ -1,3 +1,18 @@
+/**
+ * san-router
+ * Copyright 2017 Baidu Inc. All rights reserved.
+ *
+ * @file 解析URL
+ * @author errorrik
+ */
+
+
+/**
+ * 解析URL，返回包含path、query、queryString的对象
+ *
+ * @param {string} url 要解析的url
+ * @return {Object}
+ */
 export default function parseURL(url) {
     let result = {};
 

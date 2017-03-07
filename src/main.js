@@ -1,3 +1,10 @@
+/**
+ * san-router
+ * Copyright 2017 Baidu Inc. All rights reserved.
+ *
+ * @file 主模块
+ * @author errorrik
+ */
 
 import HashLocator from './locator/hash';
 import HTML5Locator from './locator/html5';
@@ -7,9 +14,25 @@ import Link from './component/link'
 let routeID = 0x5942b;
 let guid = () => (++routeID).toString();
 
+/**
+ * 版本号
+ *
+ * @type {string}
+ */
 export let version = '1.0.0';
 
+/**
+ * 路由器类
+ *
+ * @class
+ */
 export class Router {
+    /**
+     * 构造函数
+     *
+     * @param {Object?} options 初始化参数
+     * @param {string?} options.mode 路由模式，hash | html5
+     */
     constructor({mode = 'hash'} = {}) {
         this.routes = [];
         this.routeAlives = [];
@@ -46,6 +69,13 @@ export class Router {
         this.setMode(mode);
     }
 
+    /**
+     * 执行路由
+     *
+     * @private
+     * @param {Object} routeItem 路由项
+     * @param {Object} e 路由信息
+     */
     doRoute(routeItem, e) {
         let isUpdateAlive = false;
         let len = this.routeAlives.length;
@@ -84,6 +114,17 @@ export class Router {
         }
     }
 
+    /**
+     * 添加路由项
+     * 当规则匹配时，路由将优先将Component渲染到target中。如果没有包含Component，则执行handler函数
+     *
+     * @private
+     * @param {Object} routeItem 路由项
+     * @param {string|RegExp} routeItem.rule 路由规则
+     * @param {Function?} routeItem.handler 路由函数
+     * @param {Function?} routeItem.Component 路由组件
+     * @param {string} routeItem.target 路由组件要渲染到的目标位置
+     */
     add({rule, handler, target = '#main', Component}) {
         let keys = [''];
 
@@ -110,6 +151,9 @@ export class Router {
         return this;
     }
 
+    /**
+     * 启动路由功能
+     */
     start() {
         if (!this.isStarted) {
             this.isStarted = true;
@@ -121,6 +165,9 @@ export class Router {
         return this;
     }
 
+    /**
+     * 停止路由功能
+     */
     stop() {
         this.locator.un('redirect', this.locatorRedirectHandler);
         this.locator.stop();
@@ -129,6 +176,11 @@ export class Router {
         return this;
     }
 
+    /**
+     * 设置路由模式
+     *
+     * @param {string} mode 路由模式，hash | html5
+     */
     setMode(mode) {
         mode = mode.toLowerCase();
         if (this.mode === mode) {
@@ -159,7 +211,18 @@ export class Router {
     }
 }
 
+/**
+ * 默认的路由器实例
+ *
+ * @type {Router}
+ */
 export let router = new Router();
+
+/**
+ * 路由链接的 San 组件
+ *
+ * @class
+ */
 export {Link};
 
 

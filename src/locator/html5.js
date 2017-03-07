@@ -1,8 +1,19 @@
-
+/**
+ * san-router
+ * Copyright 2017 Baidu Inc. All rights reserved.
+ *
+ * @file html5 模式地址监听器
+ * @author errorrik
+ */
 
 import EventTarget from 'mini-event/EventTarget';
 import resoveURL from '../resolve-url';
 
+/**
+ * 获取当前URL
+ *
+ * @return {string}
+ */
 function getLocation() {
     return location.pathname + location.search;
 }
@@ -10,7 +21,15 @@ function getLocation() {
 const POPSTATE_HANDLER_KEY = Symbol('popstate_handler_key');
 
 
+/**
+ * html5 模式地址监听器
+ *
+ * @class
+ */
 export default class Locator extends EventTarget {
+    /**
+     * 构造函数
+     */
     constructor() {
         super();
 
@@ -28,14 +47,27 @@ export default class Locator extends EventTarget {
         };
     }
 
+    /**
+     * 开始监听 url 变化
+     */
     start() {
         window.addEventListener('popstate', this[POPSTATE_HANDLER_KEY]);
     }
 
+    /**
+     * 停止监听
+     */
     stop() {
         window.removeEventListener('popstate', this[POPSTATE_HANDLER_KEY]);
     }
 
+    /**
+     * 重定向
+     *
+     * @param {string} url 重定向的地址
+     * @param {Object?} options 重定向的行为配置
+     * @param {boolean?} options.force 是否强制刷新
+     */
     redirect(url, options = {force: false}) {
         url = resoveURL(url, this.current);
         let referrer = this.current;
@@ -54,6 +86,9 @@ export default class Locator extends EventTarget {
         }
     }
 
+    /**
+     * 刷新当前 url
+     */
     reload() {
         this.fire('redirect', {
             url: this.current,
