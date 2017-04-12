@@ -20,7 +20,12 @@ export default {
             router.locator.redirect(href.replace(/^#/, ''));
         }
 
-        e.preventDefault();
+        if (e.preventDefault) {
+            e.preventDefault();
+        }
+        else {
+            e.returnValue = false;
+        }
     },
 
     computed: {
