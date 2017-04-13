@@ -51,14 +51,26 @@ export default class Locator extends EventTarget {
      * 开始监听 url 变化
      */
     start() {
-        window.addEventListener('hashchange', this[HASHCHANGE_HANDLER_KEY], false);
+        if (window.addEventListener) {
+            window.addEventListener('hashchange', this[HASHCHANGE_HANDLER_KEY], false);
+        }
+
+        if (window.attachEvent) {
+            window.attachEvent('onhashchange', this[HASHCHANGE_HANDLER_KEY]);
+        }
     }
 
     /**
      * 停止监听
      */
     stop() {
-        window.removeEventListener('hashchange', this[HASHCHANGE_HANDLER_KEY], false);
+        if (window.removeEventListener) {
+            window.removeEventListener('hashchange', this[HASHCHANGE_HANDLER_KEY], false);
+        }
+
+        if (window.detachEvent) {
+            window.detachEvent('onhashchange', this[HASHCHANGE_HANDLER_KEY]);
+        }
     }
 
     /**
