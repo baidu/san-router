@@ -122,6 +122,40 @@ router.add({
 - `string` options.target - 组件渲染的容器元素，默认值为 **#main**
 - `Function` options.handler 规则匹配时的执行函数
 
+
+#### listen({Function}listener)
+
+`说明`
+
+添加路由监听器。当发生路由行为时，监听器函数被触发。
+
+```javascript
+router.listen(function (e, config) {
+    e.query.id
+});
+```
+
+`参数`
+
+- `Function` listener - 监听器函数
+
+
+`监听器函数参数`
+
+- `Object` e - 路由信息对象
+- `Object` config - 路由配置对象
+
+#### unlisten({Function}listener)
+
+`说明`
+
+移除路由监听器。
+
+`参数`
+
+- `Function` listener - 监听器函数
+
+
 #### setMode({string}mode)
 
 `说明`

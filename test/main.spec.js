@@ -131,4 +131,27 @@ describe('Router', () => {
             }, 2);
         }, 222)
     });
+
+    it('listen route behavior', done => {
+        var config = {
+            rule: '/main-route/listen/:num',
+            handler: function () {
+                isCall = true;
+            }
+        };
+
+        function listener(e, c) {
+            expect(e.query.num).toBe('1');
+            expect(c).toBe(config);
+        }
+        router.add(config);
+        router.listen(listener);
+        location.hash = '/main-route/listen/1';
+        setTimeout(() => {
+
+            router.unlisten(listener);
+            location.hash = '/null';
+            done();
+        }, 0)
+    });
 });

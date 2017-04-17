@@ -36,6 +36,7 @@ export class Router {
     constructor({mode = 'hash'} = {}) {
         this.routes = [];
         this.routeAlives = [];
+        this.listeners = [];
 
         this.locatorRedirectHandler = e => {
             let url = parseURL(e.url);
@@ -70,6 +71,29 @@ export class Router {
     }
 
     /**
+     * 添加路由监听器
+     *
+     * @param {function({Object}e, {Object}config)} listener 监听器
+     */
+    listen(listener) {
+        this.listeners.push(listener);
+    }
+
+    /**
+     * 移除路由监听器
+     *
+     * @param {Function} listener 监听器
+     */
+    unlisten(listener) {
+        let len = this.listeners.length;
+        while (len--) {
+            if (this.listeners[len] === listener) {
+                this.listeners.splice(len, 1);
+            }
+        }
+    }
+
+    /**
      * 执行路由
      *
      * @private
@@ -77,6 +101,10 @@ export class Router {
      * @param {Object} e 路由信息
      */
     doRoute(routeItem, e) {
+        for (let i = 0; i < this.listeners.length; i++) {
+            this.listeners[i].call(this, e, routeItem.config);
+        }
+
         let isUpdateAlive = false;
         let len = this.routeAlives.length;
 
@@ -119,13 +147,14 @@ export class Router {
      * 当规则匹配时，路由将优先将Component渲染到target中。如果没有包含Component，则执行handler函数
      *
      * @private
-     * @param {Object} routeItem 路由项
-     * @param {string|RegExp} routeItem.rule 路由规则
-     * @param {Function?} routeItem.handler 路由函数
-     * @param {Function?} routeItem.Component 路由组件
-     * @param {string} routeItem.target 路由组件要渲染到的目标位置
+     * @param {Object} config 路由项配置
+     * @param {string|RegExp} config.rule 路由规则
+     * @param {Function?} config.handler 路由函数
+     * @param {Function?} config.Component 路由组件
+     * @param {string} config.target 路由组件要渲染到的目标位置
      */
-    add({rule, handler, target = '#main', Component}) {
+    add(config) {
+        let {rule, handler, target = '#main', Component} = config;
         let keys = [''];
 
         if (typeof rule === 'string') {
@@ -146,7 +175,7 @@ export class Router {
         }
 
         let id = guid();
-        this.routes.push({id, rule, handler, keys, target, Component});
+        this.routes.push({id, rule, handler, keys, target, Component, config});
 
         return this;
     }
