@@ -70,6 +70,17 @@ describe('Router', () => {
         location.hash = '/route-test/1';
     });
 
+    it('by handler, should call handler, match non ascii string as rule :xxx', done => {
+        router.add({
+            rule: '/route-test/non/asc/:name',
+            handler: e => {
+                expect(e.query.name).toBe('你好');
+                done();
+            }
+        });
+        location.hash = '/route-test/non/asc/你好';
+    });
+
     it('by handler, should call handler, match string as multi rules :xxx', done => {
         router.add({
             rule: '/route-test2/:name/:id',

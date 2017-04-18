@@ -163,7 +163,7 @@ export class Router {
                 /\/:([a-z0-9_-]+)(?=\/|$)/g,
                 (match, key) => {
                     keys.push(key);
-                    return '/([a-z0-9_-]+)';
+                    return '/([^/\\s]+)';
                 }
             );
 
