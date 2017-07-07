@@ -28,7 +28,7 @@ $ npm i san-router
 通过 named import 导入
 
 ```javascript
-import {router, Link} form 'san-router';
+import {router, Link} from 'san-router';
 
 router.add({
     rule: '/book/:id',
