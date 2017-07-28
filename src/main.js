@@ -38,33 +38,109 @@ export class Router {
         this.routeAlives = [];
         this.listeners = [];
 
+        /**
+         * locator redirect 事件监听函数
+         *
+         * @param {Object} e locator事件对象
+         */
         this.locatorRedirectHandler = e => {
             let url = parseURL(e.url);
+            let routeItem;
 
             for (let i = 0; i < this.routes.length; i++) {
-                let routeItem = this.routes[i];
-                let match = routeItem.rule.exec(url.path);
+                let item = this.routes[i];
+                let match = item.rule.exec(url.path);
 
                 if (match) {
+                    routeItem = item;
+
                     // fill query
-                    let keys = routeItem.keys || [];
+                    let keys = item.keys || [];
                     for (let j = 1; j < match.length; j++) {
                         url.query[keys[j] || j] = match[j];
                     }
 
                     // fill referrer
                     url.referrer = e.referrer;
+                    url.config = item.config;
 
-                    this.doRoute(routeItem, url);
-                    return;
+                    break;
                 }
             }
 
-            let len = this.routeAlives.length;
-            while (len--) {
-                this.routeAlives[len].component.dispose();
-                this.routeAlives.splice(len, 1);
-            }
+            let i = 0;
+            let state = 1;
+
+            /**
+             * listener 事件对象
+             *
+             * @type {Object}
+             */
+            let listenerEvent = {
+                hash: url.hash,
+                queryString: url.queryString,
+                query: url.query,
+                path: url.path,
+                referrer: url.referrer,
+                config: url.config,
+                resume: next,
+                suspend() {
+                    state = 0;
+                },
+                stop() {
+                    state = -1;
+                }
+            };
+
+            /**
+             * 尝试运行下一个listener
+             *
+             * @inner
+             */
+            let doNext = () => {
+                if (state > 0) {
+                    if (i < this.listeners.length) {
+                        this.listeners[i].call(this, listenerEvent, url.config);
+                        if (state > 0) {
+                            next();
+                        }
+                    }
+                    else {
+                        routeAction();
+                    }
+                }
+            };
+
+            /**
+             * 运行下一个listener
+             *
+             * @inner
+             */
+            function next() {
+                state = 1;
+                i++;
+                doNext();
+            };
+
+            /**
+             * 运行路由行为
+             *
+             * @inner
+             */
+            let routeAction = () => {
+                if (routeItem) {
+                    this.doRoute(routeItem, url);
+                }
+                else {
+                    let len = this.routeAlives.length;
+                    while (len--) {
+                        this.routeAlives[len].component.dispose();
+                        this.routeAlives.splice(len, 1);
+                    }
+                }
+            };
+
+            doNext();
         };
 
         this.setMode(mode);
@@ -101,10 +177,6 @@ export class Router {
      * @param {Object} e 路由信息
      */
     doRoute(routeItem, e) {
-        for (let i = 0; i < this.listeners.length; i++) {
-            this.listeners[i].call(this, e, routeItem.config);
-        }
-
         let isUpdateAlive = false;
         let len = this.routeAlives.length;
 

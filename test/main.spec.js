@@ -144,6 +144,7 @@ describe('Router', () => {
     });
 
     it('listen route behavior', done => {
+        let isCall = false;
         var config = {
             rule: '/main-route/listen/:num',
             handler: function () {
@@ -159,10 +160,68 @@ describe('Router', () => {
         router.listen(listener);
         location.hash = '/main-route/listen/1';
         setTimeout(() => {
+            expect(isCall).toBe(true);
 
             router.unlisten(listener);
             location.hash = '/null';
             done();
         }, 0)
+    });
+
+    it('listen route behavior，suspend and resume', done => {
+        let isCall = false;
+        var config = {
+            rule: '/main-route-listen-async',
+            handler: function () {
+                isCall = true;
+            }
+        };
+
+        function listener(e) {
+            e.suspend();
+            setTimeout(() => {
+                e.resume();
+            }, 100);
+
+            expect(isCall).toBe(false);
+        }
+        router.add(config);
+        router.listen(listener);
+        location.hash = '/main-route-listen-async';
+        setTimeout(() => {
+            expect(isCall).toBe(true);
+
+            router.unlisten(listener);
+            location.hash = '/null';
+            done();
+        }, 500)
+    });
+
+    it('listen route behavior，stop and redirect manually', done => {
+        let isCall = false;
+        var config = {
+            rule: '/main-route-listen-redirect',
+            handler: function () {
+                isCall = true;
+            }
+        };
+
+        function listener(e) {
+            expect(isCall).toBe(false);
+
+            e.stop();
+            this.locator.redirect('/null');
+        }
+
+        router.add(config);
+        router.listen(listener);
+        location.hash = '/main-route-listen-redirect';
+        setTimeout(() => {
+            expect(isCall).toBe(false);
+            expect(location.hash.indexOf('/null') >= 0).toBe(true);
+
+            router.unlisten(listener);
+            done();
+        }, 500)
     });
 });
