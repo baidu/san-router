@@ -1,11 +1,11 @@
 {
   "name": "san-router",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "Router for San",
   "scripts": {
     "build": "rm -rf dist && webpack && uglifyjs dist/san-router.source.js -mco dist/san-router.js",
-    "test-server": "webpack-dev-server --config test/webpack.config.js --history-api-fallback --host 0.0.0.0 --port 8384",
-    "test": "npm run test-server && open http://0.0.0.0:8384/test/"
+    "dev": "webpack-dev-server --config test/webpack.config.js --history-api-fallback --host 0.0.0.0 --port 8384",
+    "test": "npm run dev && open http://0.0.0.0:8384/test/"
   },
   "devDependencies": {
     "babel-core": "^6.21.0",
