@@ -25,7 +25,6 @@ function getLocation() {
     return url;
 }
 
-const HASHCHANGE_HANDLER_KEY = Symbol('hashchange_handler_key');
 
 /**
  * hash 模式地址监听器
@@ -42,7 +41,7 @@ export default class Locator extends EventTarget {
         this.current = getLocation();
         this.referrer = '';
 
-        this[HASHCHANGE_HANDLER_KEY] = () => {
+        this.hashChangeHandler = () => {
             this.redirect(getLocation());
         };
     }
@@ -52,11 +51,11 @@ export default class Locator extends EventTarget {
      */
     start() {
         if (window.addEventListener) {
-            window.addEventListener('hashchange', this[HASHCHANGE_HANDLER_KEY], false);
+            window.addEventListener('hashchange', this.hashChangeHandler, false);
         }
 
         if (window.attachEvent) {
-            window.attachEvent('onhashchange', this[HASHCHANGE_HANDLER_KEY]);
+            window.attachEvent('onhashchange', this.hashChangeHandler);
         }
     }
 
@@ -65,11 +64,11 @@ export default class Locator extends EventTarget {
      */
     stop() {
         if (window.removeEventListener) {
-            window.removeEventListener('hashchange', this[HASHCHANGE_HANDLER_KEY], false);
+            window.removeEventListener('hashchange', this.hashChangeHandler, false);
         }
 
         if (window.detachEvent) {
-            window.detachEvent('onhashchange', this[HASHCHANGE_HANDLER_KEY]);
+            window.detachEvent('onhashchange', this.hashChangeHandler);
         }
     }
 

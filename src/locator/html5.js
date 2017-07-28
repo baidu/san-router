@@ -18,8 +18,6 @@ function getLocation() {
     return location.pathname + location.search;
 }
 
-const POPSTATE_HANDLER_KEY = Symbol('popstate_handler_key');
-
 
 /**
  * html5 模式地址监听器
@@ -36,7 +34,7 @@ export default class Locator extends EventTarget {
         this.current = getLocation();
         this.referrer = '';
 
-        this[POPSTATE_HANDLER_KEY] = () => {
+        this.popstateHandler = () => {
             this.referrer = this.current;
             this.current = getLocation();
 
@@ -51,14 +49,14 @@ export default class Locator extends EventTarget {
      * 开始监听 url 变化
      */
     start() {
-        window.addEventListener('popstate', this[POPSTATE_HANDLER_KEY]);
+        window.addEventListener('popstate', this.popstateHandler);
     }
 
     /**
      * 停止监听
      */
     stop() {
-        window.removeEventListener('popstate', this[POPSTATE_HANDLER_KEY]);
+        window.removeEventListener('popstate', this.popstateHandler);
     }
 
     /**
