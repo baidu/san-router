@@ -145,6 +145,35 @@ router.listen(function (e, config) {
 - `Object` e - 路由信息对象
 - `Object` config - 路由配置对象
 
+
+路由监听器作为所有路由的切面函数，通常承担权限判断之类基础的任务。所以路由监听器可以通过 `stop` 方法阻断当前路由过程，并进行 URL 跳转。
+
+```javascript
+router.listen(function (e) {
+    if (!checkPermission()) {
+        e.stop();
+        this.locator.redirect('/forbidden');
+    }
+});
+```
+
+路由监听器可以通过 `suspend` 和 `resume` 方法中断和唤醒路由过程，实现异步。不过异步过程会导致路由对应的视图渲染延迟，慎用。
+
+```javascript
+router.listen(function (e) {
+    e.suspend();
+    checkPermission().then(invalid => {
+        if (invalid) {
+            e.stop();
+            this.locator.redirect('/forbidden');
+            return;
+        }
+
+        e.resume();
+    });
+});
+```
+
 #### unlisten({Function}listener)
 
 `说明`
