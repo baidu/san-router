@@ -232,7 +232,7 @@ export class Router {
         if (typeof rule === 'string') {
             // 没用path-to-regexp，暂时不提供这么多功能支持
             let regText = rule.replace(
-                /\/:([\w-]+)(?=\/|$)/g,
+                /\/:([a-z0-9_-]+)(?=\/|$)/ig,
                 (match, key) => {
                     keys.push(key);
                     return '/([^/\\s]+)';
