@@ -70,6 +70,17 @@ describe('Router', () => {
         location.hash = '/route-test/1';
     });
 
+    it('by handler, should call handler, match string as rule :xxxYyy', done => {
+        router.add({
+            rule: '/route-test2/:tagId',
+            handler: e => {
+                expect(e.query.tagId).toBe('3');
+                done();
+            }
+        });
+        location.hash = '/route-test2/3';
+    });
+
     it('by handler, should call handler, match non ascii string as rule :xxx', done => {
         router.add({
             rule: '/route-test/non/asc/:name',
@@ -91,6 +102,29 @@ describe('Router', () => {
             }
         });
         location.hash = '/route-test2/Route-test/2';
+    });
+
+    it('by handler, should call handler, match string as multi rules :xxxYyy', done => {
+        router.add({
+            rule: '/route-test3/:testName/:tagId',
+            handler: e => {
+                expect(e.query.tagId).toBe('2');
+                expect(e.query.testName).toBe('Route-test');
+                done();
+            }
+        });
+        location.hash = '/route-test3/Route-test/2';
+    });
+
+    it('by handler, should call handler, match string as rule :xxx-yyy', done => {
+        router.add({
+            rule: '/route-test4/:data-id',
+            handler: e => {
+                expect(e.query['data-id']).toBe('3');
+                done();
+            }
+        });
+        location.hash = '/route-test4/3';
     });
 
     it('by handler, should call handler, match RegExp', done => {
