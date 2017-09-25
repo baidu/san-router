@@ -225,7 +225,7 @@ export class Router {
      * @param {Function?} config.handler 路由函数
      * @param {Function?} config.Component 路由组件
      * @param {string} config.target 路由组件要渲染到的目标位置
-     * @return {Function} san-router 实例
+     * @return {Object} san-router 实例
      */
     add(config) {
         let {rule, handler, target = '#main', Component} = config;
@@ -257,7 +257,7 @@ export class Router {
     /**
      * 启动路由功能
      *
-     * @return {Function} san-router 实例
+     * @return {Object} san-router 实例
      */
     start() {
         if (!this.isStarted) {
@@ -273,7 +273,7 @@ export class Router {
     /**
      * 停止路由功能
      *
-     * @return {Function} san-router 实例
+     * @return {Object} san-router 实例
      */
     stop() {
         this.locator.un('redirect', this.locatorRedirectHandler);
@@ -287,7 +287,7 @@ export class Router {
      * 设置路由模式
      *
      * @param {string} mode 路由模式，hash | html5
-     * @return {Function} san-router 实例
+     * @return {Object} san-router 实例
      */
     setMode(mode) {
         mode = mode.toLowerCase();
