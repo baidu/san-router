@@ -1,12 +1,11 @@
 {
     "presets": [
-        "es2015",
-        "es2016",
-        "es2015-loose"
+        ["es2015", {"loose": true}],
+        ["es2016"]
     ],
     "plugins": [
-        'transform-es3-member-expression-literals',
-        'transform-es3-property-literals'
+        "transform-es3-member-expression-literals",
+        "transform-es3-property-literals"
     ]
 }
 

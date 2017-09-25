@@ -72,7 +72,7 @@ describe('Synthesis', () => {
         }
     });
 
-    it('hash mode, link to route', done => {
+    it('html5 mode, link to route', done => {
         router.setMode('html5');
 
         let routeTimes = 0;
