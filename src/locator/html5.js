@@ -25,6 +25,7 @@ function getLocation() {
  * @class
  */
 export default class Locator extends EventTarget {
+
     /**
      * 构造函数
      */

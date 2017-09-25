@@ -14,24 +14,26 @@
  * @return {Object}
  */
 export default function parseURL(url) {
-    let result = {};
+    const result = {
+        hash: '',
+        queryString: '',
+        query: {},
+        path: url
+    };
 
     // parse hash
-    result.hash = '';
-    let hashStart = url.indexOf('#');
+    const hashStart = result.path.indexOf('#');
     if (hashStart >= 0) {
-        result.hash = url.slice(hashStart + 1);
-        url = url.slice(0, hashStart);
+        result.hash = result.path.slice(hashStart + 1);
+        result.path = result.path.slice(0, hashStart);
     }
 
     // parse query
-    result.queryString = '';
-    let query = {};
-    result.query = query;
-    let queryStart = url.indexOf('?');
+    const query = result.query;
+    const queryStart = result.path.indexOf('?');
     if (queryStart >= 0) {
-        result.queryString = url.slice(queryStart + 1);
-        url = url.slice(0, queryStart);
+        result.queryString = result.path.slice(queryStart + 1);
+        result.path = result.path.slice(0, queryStart);
 
         result.queryString.split('&').forEach(querySeg => {
             // 考虑到有可能因为未处理转义问题，
@@ -48,7 +50,9 @@ export default function parseURL(url) {
 
             // 已经存在这个参数，且新的值不为空时，把原来的值变成数组
             if (query.hasOwnProperty(key)) {
+                /* eslint-disable */
                 query[key] = [].concat(query[key], value);
+                /* eslint-disable */
             }
             else {
                 query[key] = value;
@@ -56,9 +60,6 @@ export default function parseURL(url) {
         });
 
     }
-
-    // left path
-    result.path = url;
 
     return result;
 }

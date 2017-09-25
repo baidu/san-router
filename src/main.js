@@ -9,7 +9,7 @@
 import HashLocator from './locator/hash';
 import HTML5Locator from './locator/html5';
 import parseURL from './parse-url';
-import Link from './component/link'
+import Link from './component/link';
 
 let routeID = 0x5942b;
 let guid = () => (++routeID).toString();
@@ -27,6 +27,7 @@ export let version = '1.1.1';
  * @class
  */
 export class Router {
+
     /**
      * 构造函数
      *
@@ -120,7 +121,7 @@ export class Router {
                 state = 1;
                 i++;
                 doNext();
-            };
+            }
 
             /**
              * 运行路由行为
@@ -149,7 +150,7 @@ export class Router {
     /**
      * 添加路由监听器
      *
-     * @param {function({Object}e, {Object}config)} listener 监听器
+     * @param {function({Object})} listener 监听器
      */
     listen(listener) {
         this.listeners.push(listener);
@@ -224,6 +225,7 @@ export class Router {
      * @param {Function?} config.handler 路由函数
      * @param {Function?} config.Component 路由组件
      * @param {string} config.target 路由组件要渲染到的目标位置
+     * @return {Function} san-router 实例
      */
     add(config) {
         let {rule, handler, target = '#main', Component} = config;
@@ -254,6 +256,8 @@ export class Router {
 
     /**
      * 启动路由功能
+     *
+     * @return {Function} san-router 实例
      */
     start() {
         if (!this.isStarted) {
@@ -268,6 +272,8 @@ export class Router {
 
     /**
      * 停止路由功能
+     *
+     * @return {Function} san-router 实例
      */
     stop() {
         this.locator.un('redirect', this.locatorRedirectHandler);
@@ -281,6 +287,7 @@ export class Router {
      * 设置路由模式
      *
      * @param {string} mode 路由模式，hash | html5
+     * @return {Function} san-router 实例
      */
     setMode(mode) {
         mode = mode.toLowerCase();
