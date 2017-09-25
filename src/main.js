@@ -150,7 +150,7 @@ export class Router {
     /**
      * 添加路由监听器
      *
-     * @param {function({Object})} listener 监听器
+     * @param {function(e, config)} listener 监听器
      */
     listen(listener) {
         this.listeners.push(listener);
