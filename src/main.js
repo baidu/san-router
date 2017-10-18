@@ -202,7 +202,12 @@ export class Router {
                 component._callHook('route');
 
                 let targetEl = document.querySelector(routeItem.target);
-                targetEl && component.attach(targetEl);
+
+                if (!targetEl) {
+                    throw new Error('Cannot find target element!');
+                }
+
+                component.attach(targetEl);
 
                 this.routeAlives.push({
                     component,
@@ -332,5 +337,3 @@ export let router = new Router();
  * @class
  */
 export {Link};
-
-
