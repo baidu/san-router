@@ -20,7 +20,7 @@ function getLocation() {
     // 在Firefox下获取会成为**abc=def**
     // 为了避免这一情况，需要从`location.href`中分解
     let index = location.href.indexOf('#');
-    let url = index < 0 ? '/' : location.href.slice(index + 1);
+    let url = index < 0 ? '/' : (location.href.slice(index + 1) || '/');
 
     return url;
 }
