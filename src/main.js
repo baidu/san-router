@@ -202,7 +202,15 @@ export class Router {
                 component._callHook('route');
 
                 let targetEl = document.querySelector(routeItem.target);
-                targetEl && component.attach(targetEl);
+
+                if (!targetEl) {
+                    throw new Error('[SAN-ROUTER ERROR] '
+                        + 'Attach failed, target element "'
+                        + routeItem.target + '" is not found.'
+                    );
+                }
+
+                component.attach(targetEl);
 
                 this.routeAlives.push({
                     component,
@@ -245,7 +253,7 @@ export class Router {
         }
 
         if (!(rule instanceof RegExp)) {
-            throw new Error('Rule must be string or RegExp!');
+            throw new Error('[SAN-ROUTER ERROR] Rule must be string or RegExp!');
         }
 
         let id = guid();
@@ -332,5 +340,3 @@ export let router = new Router();
  * @class
  */
 export {Link};
-
-
