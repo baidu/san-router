@@ -201,7 +201,8 @@ export class Router {
                 component.data.set('route', e);
                 component._callHook('route');
 
-                let targetEl = document.querySelector(routeItem.target);
+                let target = routeItem.target;
+                let targetEl = target instanceof Element ? target : document.querySelector(target);
 
                 if (!targetEl) {
                     throw new Error('[SAN-ROUTER ERROR] '
