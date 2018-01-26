@@ -16,9 +16,7 @@ let routeID = 0x5942b;
 let guid = () => (++routeID).toString();
 
 function isComponent(C) {
-    // NodeType.CMPT = 5
-    return C.prototype.nodeType === 5
-        || C.prototype._type === 'san-cmpt';
+    return C.prototype && (C.prototype.nodeType === 5 || C.prototype._type === 'san-cmpt');
 }
 
 /**
@@ -212,7 +210,12 @@ export class Router {
                 }
                 else {
                     routeItem.Component().then(Cmpt => { // eslint-disable-line
-                        routeItem.Component = Cmpt;
+                        if (isComponent(Cmpt)) {
+                            routeItem.Component = Cmpt;
+                        }
+                        else if (Cmpt.__esModule && isComponent(Cmpt.default)) {
+                            routeItem.Component = Cmpt.default;
+                        }
                         this.attachCmpt(routeItem, e);
                     });
                 }
