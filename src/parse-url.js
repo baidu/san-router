@@ -17,6 +17,7 @@ export default function parseURL(url) {
     const result = {
         hash: '',
         queryString: '',
+        params: {},
         query: {},
         path: url
     };

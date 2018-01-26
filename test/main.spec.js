@@ -85,7 +85,7 @@ describe('Router', () => {
         router.add({
             rule: '/route-test/non/asc/:name',
             handler: e => {
-                expect(e.query.name).toBe('你好');
+                expect(e.params.name).toBe('%E4%BD%A0%E5%A5%BD');
                 done();
             }
         });
