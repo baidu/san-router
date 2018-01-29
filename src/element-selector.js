@@ -10,7 +10,7 @@
  * @param selector 选择器
  * @returns {*} 返回元素或者undefined
  */
-export default function (selector) {
+export default function elementSelector(selector) {
     let el;
     if (document.querySelector) {
         el = document.querySelector(selector);
