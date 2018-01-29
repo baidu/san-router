@@ -10,6 +10,7 @@ import HashLocator from './locator/hash';
 import HTML5Locator from './locator/html5';
 import parseURL from './parse-url';
 import Link from './component/link';
+import elementSelector from './elementSelector'
 
 let routeID = 0x5942b;
 let guid = () => (++routeID).toString();
@@ -202,7 +203,7 @@ export class Router {
                 component._callHook('route');
 
                 let target = routeItem.target;
-                let targetEl = target instanceof Element ? target : document.querySelector(target);
+                let targetEl = target instanceof Element ? target : elementSelector(target);
 
                 if (!targetEl) {
                     throw new Error('[SAN-ROUTER ERROR] '
