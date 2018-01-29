@@ -56,10 +56,13 @@ export class Router {
                 if (match) {
                     routeItem = item;
 
-                    // fill query
+                    // fill params
                     let keys = item.keys || [];
                     for (let j = 1; j < match.length; j++) {
-                        url.query[keys[j] || j] = match[j];
+                        const key = keys[j] || j;
+                        const value = match[j];
+                        url.query[key] = value;
+                        url.params[key] = value;
                     }
 
                     // fill referrer
