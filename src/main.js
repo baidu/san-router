@@ -10,10 +10,14 @@ import HashLocator from './locator/hash';
 import HTML5Locator from './locator/html5';
 import parseURL from './parse-url';
 import Link from './component/link';
-import elementSelector from './element-selector'
+import elementSelector from './element-selector';
 
 let routeID = 0x5942b;
 let guid = () => (++routeID).toString();
+
+function isComponent(C) {
+    return C.prototype && (C.prototype.nodeType === 5 || C.prototype._type === 'san-cmpt');
+}
 
 /**
  * 版本号
@@ -201,31 +205,48 @@ export class Router {
 
         if (!isUpdateAlive) {
             if (routeItem.Component) {
-                let component = new routeItem.Component();
-                component.data.set('route', e);
-                component._callHook('route');
-
-                let target = routeItem.target;
-                let targetEl = target instanceof Element ? target : elementSelector(target);
-
-                if (!targetEl) {
-                    throw new Error('[SAN-ROUTER ERROR] '
-                        + 'Attach failed, target element "'
-                        + routeItem.target + '" is not found.'
-                    );
+                if (isComponent(routeItem.Component)) {
+                    this.attachCmpt(routeItem, e);
                 }
-
-                component.attach(targetEl);
-
-                this.routeAlives.push({
-                    component,
-                    id: routeItem.id
-                });
+                else {
+                    routeItem.Component().then(Cmpt => { // eslint-disable-line
+                        if (isComponent(Cmpt)) {
+                            routeItem.Component = Cmpt;
+                        }
+                        else if (Cmpt.__esModule && isComponent(Cmpt.default)) {
+                            routeItem.Component = Cmpt.default;
+                        }
+                        this.attachCmpt(routeItem, e);
+                    });
+                }
             }
             else {
                 routeItem.handler.call(this, e);
             }
         }
+    }
+
+    attachCmpt(routeItem, e) {
+        const component = new routeItem.Component();
+        component.data.set('route', e);
+        component._callHook('route');
+
+        let target = routeItem.target;
+        let targetEl = target instanceof Element ? target : elementSelector(target);
+
+        if (!targetEl) {
+            throw new Error('[SAN-ROUTER ERROR] '
+                + 'Attach failed, target element "'
+                + routeItem.target + '" is not found.'
+            );
+        }
+
+        component.attach(targetEl);
+
+        this.routeAlives.push({
+            component,
+            id: routeItem.id
+        });
     }
 
     /**
