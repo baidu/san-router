@@ -1,4 +1,4 @@
-import parseURL from '../src/parse-url';
+import parseURL from '../src/util/parse-url';
 
 describe('parseURL', () => {
     it('should parse path/query/hash correctly', () => {

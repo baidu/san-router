@@ -8,7 +8,7 @@
 
 
 import {router} from '../main';
-import resolveURL from '../resolve-url';
+import resolveURL from '../util/resolve-url';
 
 export default {
     template: `<a href="{{href}}"

@@ -1,4 +1,4 @@
-import resolveURL from '../src/resolve-url';
+import resolveURL from '../src/util/resolve-url';
 
 describe('resolveURL', () => {
     it('absolute path', () => {

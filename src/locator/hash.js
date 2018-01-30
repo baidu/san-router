@@ -6,8 +6,8 @@
  * @author errorrik
  */
 
-import EventTarget from 'mini-event/EventTarget';
-import resoveURL from '../resolve-url';
+import EventTarget from '../util/event-target';
+import resoveURL from '../util/resolve-url';
 
 /**
  * 获取当前URL

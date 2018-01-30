@@ -8,9 +8,9 @@
 
 import HashLocator from './locator/hash';
 import HTML5Locator from './locator/html5';
-import parseURL from './parse-url';
+import parseURL from './util/parse-url';
 import Link from './component/link';
-import elementSelector from './element-selector';
+import elementSelector from './util/element-selector';
 
 let routeID = 0x5942b;
 let guid = () => (++routeID).toString();

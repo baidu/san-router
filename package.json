@@ -30,8 +30,7 @@
     "dist"
   ],
   "dependencies": {
-    "babel-polyfill": "^6.23.0",
-    "mini-event": "^2.3.0"
+    "babel-polyfill": "^6.23.0"
   },
   "author": "otakustay",
   "repository": {
