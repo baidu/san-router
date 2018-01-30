@@ -232,7 +232,7 @@ export class Router {
         component._callHook('route');
 
         let target = routeItem.target;
-        let targetEl = target instanceof Element ? target : elementSelector(target);
+        let targetEl = elementSelector(target);
 
         if (!targetEl) {
             throw new Error('[SAN-ROUTER ERROR] '

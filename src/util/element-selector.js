@@ -7,15 +7,19 @@
 /**
  * 元素选择器
  *
- * @param selector 选择器
- * @returns {*} 返回元素或者undefined
+ * @param {string|Element} selector 选择器
+ * @returns {Element}
  */
 export default function elementSelector(selector) {
-    let el;
-    if (document.querySelector) {
-        el = document.querySelector(selector);
-    } else {
-        el = document.getElementById(selector.replace(/#/i, ''));
+    switch (typeof selector) {
+        case 'object':
+            return selector;
+
+        case 'string':
+            if (document.querySelector) {
+                return document.querySelector(selector);
+            }
+
+            return document.getElementById(selector.replace(/#/i, ''));
     }
-    return el;
 }
