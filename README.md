@@ -99,6 +99,20 @@ router.add({
 });
 ```
 
+Component 属性也可以用来加载一个异步的组件：
+
+```js
+const BookComponent = () => import('./BookComponent');
+
+router.add({
+    rule: '/book/:id',
+    Component: BookComponent,
+    target: '.app-main'
+});
+
+```
+
+
 你也可以指定一个 handler 函数，让规则匹配时执行这个函数。
 
 ```javascript
