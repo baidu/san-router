@@ -1,11 +1,11 @@
 # san-router
 
 [![NPM version](http://img.shields.io/npm/v/san-router.svg?style=flat-square)](https://npmjs.org/package/san-router)
-[![License](https://img.shields.io/github/license/ecomfe/san-router.svg?style=flat-square)](https://npmjs.org/package/san-router)
+[![License](https://img.shields.io/github/license/baidu/san-router.svg?style=flat-square)](https://npmjs.org/package/san-router)
 
-[San](https://ecomfe.github.io/san/) 框架的官方 router。通常，单页或同构的 Web 应用都会需要一个 router。
+[San](https://baidu.github.io/san/) 框架的官方 router。通常，单页或同构的 Web 应用都会需要一个 router。
 
-你可以从下面找到 san-router 的下载和使用说明，也可以直接从 [示例项目](https://github.com/ecomfe/san/tree/master/example/todos-esnext) 看看实际项目中的使用方法。 
+你可以从下面找到 san-router 的下载和使用说明，也可以直接从 [示例项目](https://github.com/baidu/san/tree/master/example/todos-esnext) 看看实际项目中的使用方法。 
 
 > 注意：使用 san-router，要求 San 的版本号 >= 3.0.2
 
