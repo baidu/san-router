@@ -15,8 +15,6 @@ export default {
         onclick="return false;"
         on-click="clicker($event)"
         target="{{target}}"
-        class="{{class}}"
-        style="{{style}}"
         >
         <slot></slot>
     </a>`,
