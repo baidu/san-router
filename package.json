@@ -1,6 +1,6 @@
 {
   "name": "san-router",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Router for San",
   "scripts": {
     "build": "rm -rf dist && webpack && uglifyjs dist/san-router.source.js -mco dist/san-router.js",

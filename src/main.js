@@ -24,7 +24,7 @@ function isComponent(C) {
  *
  * @type {string}
  */
-export let version = '1.2.0';
+export let version = '1.2.1';
 
 /**
  * 路由器类
