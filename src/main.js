@@ -86,6 +86,7 @@ export class Router {
              * @type {Object}
              */
             let listenerEvent = {
+                url: e.url,
                 hash: url.hash,
                 queryString: url.queryString,
                 query: url.query,
@@ -100,6 +101,7 @@ export class Router {
                     state = -1;
                 }
             };
+
 
             /**
              * 尝试运行下一个listener
