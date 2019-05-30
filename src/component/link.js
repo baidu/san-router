@@ -11,10 +11,11 @@ import {router} from '../main';
 import resolveURL from '../util/resolve-url';
 
 export default {
-    template: `<a href="{{href}}"
+    template: `<a href="{{hrefPrefix}}{{href}}"
         onclick="return false;"
         on-click="clicker($event)"
         target="{{target}}"
+        class="{{isActive ? activeClass : ''}}"
         >
         <slot></slot>
     </a>`,
@@ -34,19 +35,31 @@ export default {
         }
     },
 
+    inited() {
+        this.routeListener = e => {
+            this.data.set('isActive', e.url === this.data.get('href'));
+        };
+
+        this.routeListener({url: router.locator.current});
+        router.listen(this.routeListener);
+    },
+
+    disposed() {
+        router.unlisten(this.routeListener);
+        this.routeListener = null;
+    },
+
+    initData() {
+        return {
+            isActive: false,
+            hrefPrefix: router.mode === 'hash' ? '#' : ''
+        };
+    },
+
     computed: {
         href() {
-            let url = this.data.get('to');
-            if (typeof url !== 'string') {
-                return;
-            }
-
-            let href = resolveURL(url, router.locator.current);
-            if (router.mode === 'hash') {
-                href = '#' + href;
-            }
-
-            return href;
+            let url = this.data.get('to') || '';
+            return resolveURL(url, router.locator.current);
         }
     }
 };
