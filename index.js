@@ -195,6 +195,14 @@
         }
     };
 
+    var routeID = 0x5942b;
+    function guid() {
+        return (++routeID).toString();
+    }
+
+    function isComponent(C) {
+        return C.prototype && (C.prototype.nodeType === 5 || C.prototype._type === 'san-cmpt');
+    }
 
     var main = {
         /**
@@ -246,7 +254,9 @@
                     return resolveURL(url, router.locator.current);
                 }
             }
-        };
+        },
+
+        version: '1.2.2'
     };
 
     // For AMD
