@@ -195,6 +195,102 @@
         }
     };
 
+    /**
+     * 获取hash当前URL
+     *
+     * @return {string}
+     */
+    function getHashLocation() {
+        // Firefox下`location.hash`存在自动解码的情况，
+        // 比如hash的值是**abc%3def**，
+        // 在Firefox下获取会成为**abc=def**
+        // 为了避免这一情况，需要从`location.href`中分解
+        var index = location.href.indexOf('#');
+        var url = index < 0 ? '/' : (location.href.slice(index + 1) || '/');
+
+        return url;
+    }
+
+    /**
+     * hash 模式地址监听器
+     *
+     * @class
+     */
+    function HashLocator() {
+        this.current = getHashLocation();
+        this.referrer = '';
+
+        var me = this;
+        this.hashChangeHandler = function () {
+            me.redirect(getHashLocation());
+        };
+    }
+
+    HashLocator.prototype = new EventTarget();
+    HashLocator.prototype.constructor = HashLocator;
+
+    /**
+     * 开始监听 url 变化
+     */
+    HashLocator.prototype.start = function () {
+        if (window.addEventListener) {
+            window.addEventListener('hashchange', this.hashChangeHandler, false);
+        }
+
+        if (window.attachEvent) {
+            window.attachEvent('onhashchange', this.hashChangeHandler);
+        }
+    };
+
+    /**
+     * 停止监听
+     */
+    HashLocator.prototype.stop = function () {
+        if (window.removeEventListener) {
+            window.removeEventListener('hashchange', this.hashChangeHandler, false);
+        }
+
+        if (window.detachEvent) {
+            window.detachEvent('onhashchange', this.hashChangeHandler);
+        }
+    };
+
+    /**
+     * 重定向
+     *
+     * @param {string} url 重定向的地址
+     * @param {Object?} options 重定向的行为配置
+     * @param {boolean?} options.force 是否强制刷新
+     */
+    HashLocator.prototype.redirect = function (url, options) {
+        options = options || {};
+
+        url = resoveURL(url, this.current);
+        var referrer = this.current;
+
+        var isChanged = url !== referrer;
+        if (isChanged) {
+            this.referrer = referrer;
+            this.current = url;
+            location.hash = url;
+        }
+        else {
+            referrer = this.referrer;
+        }
+
+        if ((isChanged || options.force) && !options.silent) {
+            this.fire('redirect', {url, referrer});
+        }
+    };
+
+    /**
+     * 刷新当前 url
+     */
+    HashLocator.prototype.reload = function () {
+        this.redirect(this.current, {force: true});
+    };
+
+
     var routeID = 0x5942b;
     function guid() {
         return (++routeID).toString();
