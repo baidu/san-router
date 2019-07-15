@@ -283,12 +283,102 @@
         }
     };
 
+
     /**
      * 刷新当前 url
      */
     HashLocator.prototype.reload = function () {
         this.redirect(this.current, {force: true});
     };
+
+    /**
+     * 获取当前URL
+     *
+     * @return {string}
+     */
+    function getLocation() {
+        return location.pathname + location.search;
+    }
+
+    /**
+     * html5 模式地址监听器
+     *
+     * @class
+     */
+    function HTML5Locator() {
+        this.current = getLocation();
+        this.referrer = '';
+
+        var me = this;
+
+        this.popstateHandler = function () {
+            me.referrer = me.current;
+            me.current = getLocation();
+
+            me.fire('redirect', {
+                url: this.current,
+                referrer: this.referrer
+            });
+        };
+    }
+
+    HTML5Locator.prototype = new EventTarget();
+    HTML5Locator.prototype.constructor = HashLocator;
+
+    /**
+     * 开始监听 url 变化
+     */
+    HTML5Locator.prototype.start = function () {
+        window.addEventListener('popstate', this.popstateHandler);
+    };
+
+    /**
+     * 停止监听
+     */
+    HTML5Locator.prototype.stop = function () {
+        window.removeEventListener('popstate', this.popstateHandler);
+    };
+
+    /**
+     * 重定向
+     *
+     * @param {string} url 重定向的地址
+     * @param {Object?} options 重定向的行为配置
+     * @param {boolean?} options.force 是否强制刷新
+     */
+    HTML5Locator.prototype.redirect = function (url, options = {force: false}) {
+        options = options || {};
+
+        url = resoveURL(url, this.current);
+        var referrer = this.current;
+
+        var isChanged = url !== referrer;
+
+        if (isChanged) {
+            this.referrer = referrer;
+            this.current = url;
+
+            history.pushState({}, '', url);
+        }
+
+        if ((isChanged || options.force) && !options.silent) {
+            this.fire('redirect', {url, referrer});
+        }
+    };
+
+    /**
+     * 刷新当前 url
+     */
+    HTML5Locator.prototype.reload = function () {
+        this.fire('redirect', {
+            url: this.current,
+            referrer: this.referrer
+        });
+    };
+
+    HTML5Locator.isSupport = 'pushState' in window.history;
+
+
 
 
     var routeID = 0x5942b;
