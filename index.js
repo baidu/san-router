@@ -195,8 +195,58 @@
         }
     };
 
-    var main = {
 
+    var main = {
+        /**
+         * 路由链接的 San 组件
+         */
+        Link: {
+            template: '<a href="{{hrefPrefix}}{{href}}" onclick="return false;" on-click="clicker($event)" '
+                + 'target="{{target}}" class="{{isActive ? activeClass : ''}}"><slot/></a>',
+
+            clicker: function (e) {
+                var href = this.data.get('href');
+
+                if (typeof href === 'string') {
+                    router.locator.redirect(href.replace(/^#/, ''));
+                }
+
+                if (e.preventDefault) {
+                    e.preventDefault();
+                }
+                else {
+                    e.returnValue = false;
+                }
+            },
+
+            inited: function () {
+                this.routeListener = e => {
+                    this.data.set('isActive', e.url === this.data.get('href'));
+                };
+
+                this.routeListener({url: router.locator.current});
+                router.listen(this.routeListener);
+            },
+
+            disposed: function () {
+                router.unlisten(this.routeListener);
+                this.routeListener = null;
+            },
+
+            initData: function () {
+                return {
+                    isActive: false,
+                    hrefPrefix: router.mode === 'hash' ? '#' : ''
+                };
+            },
+
+            computed: {
+                href: function () {
+                    var url = this.data.get('to') || '';
+                    return resolveURL(url, router.locator.current);
+                }
+            }
+        };
     };
 
     // For AMD
