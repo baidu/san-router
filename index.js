@@ -54,7 +54,7 @@
             result.queryString = result.path.slice(queryStart + 1);
             result.path = result.path.slice(0, queryStart);
 
-            result.queryString.split('&').forEach(querySeg => {
+            result.queryString.split('&').forEach(function (querySeg) {
                 // 考虑到有可能因为未处理转义问题，
                 // 导致value中存在**=**字符，因此不使用`split`函数
                 var equalIndex = querySeg.indexOf('=');
@@ -279,7 +279,7 @@
         }
 
         if ((isChanged || options.force) && !options.silent) {
-            this.fire('redirect', {url, referrer});
+            this.fire('redirect', {url: url, referrer: referrer});
         }
     };
 
@@ -346,7 +346,7 @@
      * @param {Object?} options 重定向的行为配置
      * @param {boolean?} options.force 是否强制刷新
      */
-    HTML5Locator.prototype.redirect = function (url, options = {force: false}) {
+    HTML5Locator.prototype.redirect = function (url, options) {
         options = options || {};
 
         url = resolveURL(url, this.current);
@@ -362,7 +362,7 @@
         }
 
         if ((isChanged || options.force) && !options.silent) {
-            this.fire('redirect', {url, referrer});
+            this.fire('redirect', {url: url, referrer: referrer});
         }
     };
 
@@ -441,10 +441,10 @@
                 referrer: url.referrer,
                 config: url.config,
                 resume: next,
-                suspend() {
+                suspend: function () {
                     state = 0;
                 },
-                stop() {
+                stop: function () {
                     state = -1;
                 }
             };
@@ -489,7 +489,7 @@
                     router.doRoute(routeItem, url);
                 }
                 else {
-                    let len = router.routeAlives.length;
+                    var len = router.routeAlives.length;
                     while (len--) {
                         router.routeAlives[len].component.dispose();
                         router.routeAlives.splice(len, 1);
@@ -510,7 +510,10 @@
      * @param {Object?} options 初始化参数
      * @param {string?} options.mode 路由模式，hash | html5
      */
-    function Router({mode = 'hash'} = {}) {
+    function Router(options) {
+        options = options || {};
+        var mode = options.mode || 'hash';
+
         this.routes = [];
         this.routeAlives = [];
         this.listeners = [];
@@ -678,7 +681,7 @@
         component.attach(targetEl);
 
         this.routeAlives.push({
-            component,
+            component: component,
             id: routeItem.id
         });
     };
@@ -703,7 +706,7 @@
             // 没用path-to-regexp，暂时不提供这么多功能支持
             var regText = rule.replace(
                 /\/:([a-z0-9_-]+)(?=\/|$)/ig,
-                (match, key) => {
+                function (match, key) {
                     keys.push(key);
                     return '/([^/\\s]+)';
                 }
@@ -756,8 +759,9 @@
             },
 
             inited: function () {
-                this.routeListener = e => {
-                    this.data.set('isActive', e.url === this.data.get('href'));
+                var me = this;
+                this.routeListener = function (e) {
+                    this.data.set('isActive', e.url === me.data.get('href'));
                 };
 
                 this.routeListener({url: router.locator.current});
