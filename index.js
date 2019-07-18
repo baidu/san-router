@@ -761,7 +761,7 @@
             inited: function () {
                 var me = this;
                 this.routeListener = function (e) {
-                    this.data.set('isActive', e.url === me.data.get('href'));
+                    me.data.set('isActive', e.url === me.data.get('href'));
                 };
 
                 this.routeListener({url: router.locator.current});
