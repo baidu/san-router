@@ -788,6 +788,8 @@
         Router: Router,
         HashLocator: HashLocator,
         HTML5Locator: HTML5Locator,
+        resolveURL: resolveURL,
+        parseURL: parseURL,
 
         version: '1.2.2'
     };
