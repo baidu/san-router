@@ -3,7 +3,7 @@
   "version": "1.2.1",
   "description": "Router for San",
   "scripts": {
-    "build": "rm -rf dist && uglifyjs index.js -mco dist/san-router.js"
+    "build": "rm -rf dist && mkdir dist && uglifyjs index.js -mco dist/san-router.js"
   },
   "devDependencies": {
     "san": "^3.4.2",
