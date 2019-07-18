@@ -18,10 +18,6 @@ let config = {
             {
                 test: /\.js$/,
 
-                exclude: [
-                    /node_modules\/(?!mini-event)/,
-                ],
-
                 use: ['babel-loader']
             }
         ]
