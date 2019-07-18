@@ -1,4 +1,4 @@
-import HashLocator from '../src/locator/hash';
+import {HashLocator} from '../index';
 
 let point = (new Date).getTime();
 let nextURL = () => '/' + (++point);

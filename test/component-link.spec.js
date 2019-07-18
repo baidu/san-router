@@ -1,4 +1,4 @@
-import {router, Link} from '../src/main';
+import {router, Link} from '../index';
 
 
 

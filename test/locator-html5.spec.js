@@ -1,4 +1,4 @@
-import HTML5Locator from '../src/locator/html5';
+import {HTML5Locator} from '../index';
 
 describe('HTML5 Locator', () => {
     let locator = null;
