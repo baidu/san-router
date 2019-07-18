@@ -21,7 +21,8 @@
     "san": "^3.4.2",
     "uglify-js": "^2.7.5",
     "webpack": "^2.2.0-rc.3",
-    "webpack-dev-server": "^2.2.0-rc.0"
+    "webpack-dev-server": "^2.2.0-rc.0",
+    "jasmine-core": "^2.99.0"
   },
   "main": "dist/san-router.source.js",
   "unpkg": "dist/san-router",
@@ -29,9 +30,7 @@
     "src",
     "dist"
   ],
-  "dependencies": {
-    "babel-polyfill": "^6.23.0"
-  },
+  "dependencies": {},
   "author": "otakustay",
   "repository": {
     "type": "git",
