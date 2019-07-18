@@ -265,7 +265,7 @@
     HashLocator.prototype.redirect = function (url, options) {
         options = options || {};
 
-        url = resoveURL(url, this.current);
+        url = resolveURL(url, this.current);
         var referrer = this.current;
 
         var isChanged = url !== referrer;
@@ -316,8 +316,8 @@
             me.current = getLocation();
 
             me.fire('redirect', {
-                url: this.current,
-                referrer: this.referrer
+                url: me.current,
+                referrer: me.referrer
             });
         };
     }
@@ -349,7 +349,7 @@
     HTML5Locator.prototype.redirect = function (url, options = {force: false}) {
         options = options || {};
 
-        url = resoveURL(url, this.current);
+        url = resolveURL(url, this.current);
         var referrer = this.current;
 
         var isChanged = url !== referrer;
@@ -400,8 +400,8 @@
             var url = parseURL(e.url);
             var routeItem;
 
-            for (var i = 0; i < this.routes.length; i++) {
-                var item = this.routes[i];
+            for (var i = 0; i < router.routes.length; i++) {
+                var item = router.routes[i];
                 var match = item.rule.exec(url.path);
 
                 if (match) {
@@ -484,7 +484,7 @@
              *
              * @inner
              */
-            function routeAction {
+            function routeAction() {
                 if (routeItem) {
                     router.doRoute(routeItem, url);
                 }
@@ -721,8 +721,8 @@
             id: id,
             rule: rule,
             handler: config.handler,
-            keys,
-            config.target || '#main',
+            keys: keys,
+            target: config.target || '#main',
             Component: config.Component,
             config: config
         });
@@ -730,7 +730,7 @@
         return this;
     };
 
-
+    var router = new Router();
 
     var main = {
         /**
@@ -738,7 +738,7 @@
          */
         Link: {
             template: '<a href="{{hrefPrefix}}{{href}}" onclick="return false;" on-click="clicker($event)" '
-                + 'target="{{target}}" class="{{isActive ? activeClass : ''}}"><slot/></a>',
+                + 'target="{{target}}" class="{{isActive ? activeClass : \'\'}}"><slot/></a>',
 
             clicker: function (e) {
                 var href = this.data.get('href');
@@ -784,8 +784,10 @@
             }
         },
 
-        router: new Router(),
+        router: router,
         Router: Router,
+        HashLocator: HashLocator,
+        HTML5Locator: HTML5Locator,
 
         version: '1.2.2'
     };
