@@ -54,7 +54,10 @@
             result.queryString = result.path.slice(queryStart + 1);
             result.path = result.path.slice(0, queryStart);
 
-            result.queryString.split('&').forEach(function (querySeg) {
+            var querySegs = result.queryString.split('&');
+            for (var i = 0; i < querySegs.length; i++) {
+                var querySeg = querySegs[i];
+
                 // 考虑到有可能因为未处理转义问题，
                 // 导致value中存在**=**字符，因此不使用`split`函数
                 var equalIndex = querySeg.indexOf('=');
@@ -76,7 +79,7 @@
                 else {
                     query[key] = value;
                 }
-            });
+            }
 
         }
 
@@ -410,8 +413,8 @@
                     // fill params
                     var keys = item.keys || [];
                     for (var j = 1; j < match.length; j++) {
-                        const key = keys[j] || j;
-                        const value = match[j];
+                        var key = keys[j] || j;
+                        var value = match[j];
                         url.query[key] = value;
                         url.params[key] = value;
                     }
@@ -650,8 +653,8 @@
                         if (isComponent(Cmpt)) {
                             routeItem.Component = Cmpt;
                         }
-                        else if (Cmpt.__esModule && isComponent(Cmpt.default)) {
-                            routeItem.Component = Cmpt.default;
+                        else if (Cmpt.__esModule && isComponent(Cmpt['default'])) {
+                            routeItem.Component = Cmpt['default'];
                         }
                         me.attachCmpt(routeItem, e);
                     }
@@ -664,7 +667,7 @@
     };
 
     Router.prototype.attachCmpt = function (routeItem, e) {
-        const component = new routeItem.Component();
+        var component = new routeItem.Component();
         component.data.set('route', e);
         component._callHook('route');
 
