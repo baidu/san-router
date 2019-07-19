@@ -82,15 +82,15 @@ describe('resolveURL', function () {
 
 
 
-let point = (new Date).getTime();
-let nextURL = function () {return '/' + (++point);}
-let currentURL = function () {return '/' + point;}
-let prevURL = function () {return '/' + (point - 1);}
+var point = (new Date).getTime();
+var nextURL = function () {return '/' + (++point);}
+var currentURL = function () {return '/' + point;}
+var prevURL = function () {return '/' + (point - 1);}
 
 
 
 describe('Hash Locator', function () {
-    let locator = null;
+    var locator = null;
 
     beforeEach(function (done) {
         locator = new HashLocator();
@@ -148,7 +148,7 @@ describe('Hash Locator', function () {
     });
 
      it('should not emit redirect event when redirect is called with same url and force option', function (done) {
-        let onRedirect = jasmine.createSpy('redirect');
+        var onRedirect = jasmine.createSpy('redirect');
         locator.on('redirect', onRedirect);
         locator.redirect(currentURL());
         setTimeout(function () {
@@ -168,7 +168,7 @@ describe('Hash Locator', function () {
     });
 
      it('should not emit redirect event when redirect is called with silent option', function (done) {
-        let onRedirect = jasmine.createSpy('redirect');
+        var onRedirect = jasmine.createSpy('redirect');
         locator.on('redirect', onRedirect);
         locator.redirect(nextURL(), {silent: true});
         setTimeout(function () {
@@ -188,7 +188,9 @@ describe('Hash Locator', function () {
     });
 });
 
-describe('HTML5 Locator', function () {
+var notIE = !/msie/i.test(navigator.userAgent);
+
+notIE && describe('HTML5 Locator', function () {
     var locator = null;
 
     beforeEach(function () {
@@ -272,7 +274,7 @@ describe('HTML5 Locator', function () {
 
 
 var TestComponent = san.defineComponent({
-    template: `<p title="{{route.query.name}}">Hello {{route.query.name}}</p>`
+    template: '<p title="{{route.query.name}}">Hello {{route.query.name}}</p>'
 });
 
 router.add({
@@ -537,7 +539,7 @@ describe('Component Link', function () {
                 'router-link': Link
             },
 
-            template: `<div><router-link to="/router-link1"><b>please click here quickly</b></router-link></div>`
+            template: '<div><router-link to="/router-link1"><b>please click here quickly</b></router-link></div>'
         });
 
         var app = new App();
@@ -571,7 +573,7 @@ describe('Component Link', function () {
                     'router-link': Link
                 },
 
-                template: `<div><router-link to="../b/c">please click here quickly 2</router-link></div>`
+                template: '<div><router-link to="../b/c">please click here quickly 2</router-link></div>'
             });
 
             var app = new App();
@@ -598,14 +600,14 @@ describe('Component Link', function () {
     });
 
 
-    it('in router html5 mode, absolute path', function (done) {
+    notIE && it('in router html5 mode, absolute path', function (done) {
         router.setMode('html5');
         var App = san.defineComponent({
             components: {
                 'router-link': Link
             },
 
-            template: `<div><router-link to="/router-link3">please click here quickly 3</router-link></div>`
+            template: '<div><router-link to="/router-link3">please click here quickly 3</router-link></div>'
         });
 
         var app = new App();
@@ -631,7 +633,7 @@ describe('Component Link', function () {
         setTimeout(doneDetect, 500);
     });
 
-    it('in router html5 mode, relative path', function (done) {
+    notIE && it('in router html5 mode, relative path', function (done) {
         router.setMode('html5');
         router.locator.redirect('/router-link4/level1/level2/level3');
 
@@ -640,7 +642,7 @@ describe('Component Link', function () {
                 'router-link': Link
             },
 
-            template: `<div><router-link to="../a/b">please click here quickly 4</router-link></div>`
+            template: '<div><router-link to="../a/b">please click here quickly 4</router-link></div>'
         });
 
         var app = new App();
@@ -676,7 +678,7 @@ describe('Synthesis', function () {
 
         var routeTimes = 0;
         var App = san.defineComponent({
-            initData() {
+            initData: function () {
                 return {
                     routeTimes: 0
                 };
@@ -686,7 +688,7 @@ describe('Synthesis', function () {
                 'router-link': Link
             },
 
-            route() {
+            route: function () {
                 this.data.set('routeTimes', this.data.get('routeTimes') + 1);
                 routeTimes = this.data.get('routeTimes');
             },
@@ -730,12 +732,12 @@ describe('Synthesis', function () {
         }
     });
 
-    it('html5 mode, link to route', function (done) {
+    notIE && it('html5 mode, link to route', function (done) {
         router.setMode('html5');
 
         var routeTimes = 0;
         var App = san.defineComponent({
-            initData() {
+            initData: function () {
                 return {
                     routeTimes: 0
                 };
@@ -745,7 +747,7 @@ describe('Synthesis', function () {
                 'router-link': Link
             },
 
-            route() {
+            route: function () {
                 this.data.set('routeTimes', this.data.get('routeTimes') + 1);
                 routeTimes = this.data.get('routeTimes');
             },
