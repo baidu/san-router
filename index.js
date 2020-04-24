@@ -744,7 +744,7 @@
          */
         Link: {
             template: '<a href="{{hrefPrefix}}{{href}}" onclick="return false;" on-click="clicker($event)" '
-                + 'target="{{target}}" class="{{isActive ? activeClass : \'\'}}"><slot/></a>',
+                + 'target="{{target}}" class="{{isActive ? activeClass : \'\'}} {{class}}" title="{{title}}"><slot/></a>',
 
             clicker: function (e) {
                 var href = this.data.get('href');
