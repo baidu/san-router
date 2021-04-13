@@ -629,7 +629,9 @@
 
             if (routeAlive.id === routeItem.id) {
                 routeAlive.component.data.set('route', e);
-                routeAlive.component._callHook('route');
+                if (typeof routeAlive.component.route === 'function') {
+                    routeAlive.component.route();
+                }
                 isUpdateAlive = true;
             }
             else {
@@ -669,7 +671,9 @@
     Router.prototype.attachCmpt = function (routeItem, e) {
         var component = new routeItem.Component();
         component.data.set('route', e);
-        component._callHook('route');
+        if (typeof component.route === 'function') {
+            component.route();
+        }
 
         var target = routeItem.target;
         var targetEl = elementSelector(target);
