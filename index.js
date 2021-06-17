@@ -326,7 +326,7 @@
     }
 
     HTML5Locator.prototype = new EventTarget();
-    HTML5Locator.prototype.constructor = HashLocator;
+    HTML5Locator.prototype.constructor = HTML5Locator;
 
     /**
      * 开始监听 url 变化
