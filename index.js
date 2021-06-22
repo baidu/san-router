@@ -517,6 +517,10 @@
         options = options || {};
         var mode = options.mode || 'hash';
 
+        if (mode === 'html5' && !HTML5Locator.isSupport) {
+            throw new Error('[SAN-ROUTER ERROR] Your navigator doesn\'t supports HTML5!');
+        }
+
         this.routes = [];
         this.routeAlives = [];
         this.listeners = [];
