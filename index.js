@@ -744,6 +744,31 @@
         return this;
     };
 
+    /**
+     * 编程式路由函数，间接使用 redirect 重定向
+     * @param {Object|string} req 更换路由请求
+     */
+
+    Router.prototype.push = function (req) {
+        var link = '';
+        var params = {};
+
+        switch (typeof req) {
+            case 'object':
+                link = req.path || link;
+                params = req.params || params;
+                break;
+            case 'string':
+                link = req;
+                break;
+            default:
+                break;
+        }
+
+        if (!link) return;
+        this.locator.redirect(link.replace(/^#/, ''), { params: params });
+    }
+
     var router = new Router();
 
     var main = {
