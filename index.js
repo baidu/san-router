@@ -679,6 +679,9 @@
             component.route();
         }
 
+        // 在 san 组件实例中注入 router 路由实例，实现 this.$router.push('/a/b/c'); 这样的功能
+        component['$router'] = this;
+
         var target = routeItem.target;
         var targetEl = elementSelector(target);
 
