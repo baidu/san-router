@@ -87,6 +87,23 @@
     }
 
     /**
+     * 解析js对象为location.query形式的字符串
+     * @param {Obejct} params
+     * @returns {string}
+     */
+    function parseParams(params) {
+        let res = '';
+
+        for (var key in params) {
+            if (Object.hasOwnProperty.call(params, key)) {
+                res += key + '=' + encodeURIComponent(params[key]) + '&';
+            }
+        }
+
+        return res ? ('?' + res).slice(0, -1) : '';
+    }
+
+    /**
      * 将 URL 中相对路径部分展开
      *
      * @param {string} source 要展开的url
@@ -752,24 +769,25 @@
      * @param {Object|string} req 更换路由请求
      */
 
-    Router.prototype.push = function (req) {
-        var link = '';
+    Router.prototype.push = function (request, data) {
+        var path = '';
         var params = {};
 
-        switch (typeof req) {
+        switch (typeof request) {
             case 'object':
-                link = req.path || link;
-                params = req.params || params;
+                path = request.path || path;
+                params = request.params || params;
                 break;
             case 'string':
-                link = req;
+                path = request;
+                params = data;
                 break;
             default:
                 break;
         }
 
-        if (!link) return;
-        this.locator.redirect(link.replace(/^#/, ''), { params: params });
+        if (!path) return;
+        this.locator.redirect(path.replace(/^#/, '') + parseParams(params));
     }
 
     var router = new Router();
