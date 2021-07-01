@@ -92,7 +92,7 @@
      * @returns {string}
      */
     function parseParams(params) {
-        let res = '';
+        var res = '';
 
         for (var key in params) {
             if (Object.hasOwnProperty.call(params, key)) {
@@ -857,7 +857,7 @@
         parseURL: parseURL,
         parseParams: parseParams,
 
-        version: '1.2.4'
+        version: '1.2.3'
     };
 
     // For AMD
