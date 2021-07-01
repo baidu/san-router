@@ -96,7 +96,7 @@
 
         for (var key in params) {
             if (Object.hasOwnProperty.call(params, key)) {
-                res += key + '=' + encodeURIComponent(params[key]) + '&';
+                res += key + '=' + (params[key] ? encodeURIComponent(params[key]) : '') + '&';
             }
         }
 
@@ -696,7 +696,8 @@
             component.route();
         }
 
-        // 在 san 组件实例中注入 router 路由实例，实现 this.$router.push('/a/b/c'); 这样的功能
+        // 在 san 组件实例中注入 router 路由实例，因此可以直接拿到当前路由实例
+        // 并且实现 this.$router.push('/a/b/c'); 这样的功能，更符合习惯且更简洁
         component['$router'] = this;
 
         var target = routeItem.target;
@@ -765,8 +766,10 @@
     };
 
     /**
-     * 编程式路由函数，间接使用 redirect 重定向
-     * @param {Object|string} req 更换路由请求
+     * 编程式路由函数，间接使用 redirect 重定向，避免直接使用 内部对象locator
+     *
+     * @param {Object|string} request 路由参数，对象或者字符串
+     * @param {Obejct} data 需要传递的 query 参数对象
      */
 
     Router.prototype.push = function (request, data) {
@@ -786,6 +789,7 @@
                 break;
         }
 
+        // 空路由、空对象不处理
         if (!path) return;
         this.locator.redirect(path.replace(/^#/, '') + parseParams(params));
     }
@@ -851,8 +855,9 @@
         HTML5Locator: HTML5Locator,
         resolveURL: resolveURL,
         parseURL: parseURL,
+        parseParams: parseParams,
 
-        version: '1.2.3'
+        version: '1.2.4'
     };
 
     // For AMD
