@@ -87,20 +87,29 @@
     }
 
     /**
-     * 解析js对象为location.query形式的字符串
-     * @param {Obejct} params
+     * 解析 js 对象为 location.query 形式的字符串
+     * @param {Object|string} query
      * @returns {string}
      */
-    function parseParams(params) {
+    function parseQuery(query) {
         var res = '';
 
-        for (var key in params) {
-            if (Object.hasOwnProperty.call(params, key)) {
-                res += key + '=' + (params[key] ? encodeURIComponent(params[key]) : '') + '&';
-            }
+        if (!query || !Object.keys(query).length) return res;
+
+        if (typeof query === 'string') {
+            return query[0] === '?' ? query : '?' + query;
         }
 
-        return res ? ('?' + res).slice(0, -1) : '';
+        if (typeof query === 'object') {
+            for (var key in query) {
+                if (Object.hasOwnProperty.call(query, key)) {
+                    res += key + '=' + (query[key] ? encodeURIComponent(query[key]) : '') + '&';
+                }
+            }
+            return res ? ('?' + res).slice(0, -1) : '';
+        }
+
+        return res;
     }
 
     /**
@@ -457,6 +466,7 @@
                 hash: url.hash,
                 queryString: url.queryString,
                 query: url.query,
+                params: url.params,
                 path: url.path,
                 referrer: url.referrer,
                 config: url.config,
@@ -774,32 +784,37 @@
     };
 
     /**
-     * 编程式路由函数，间接使用 redirect 重定向，避免直接使用 内部对象locator
+     * 编程式路由函数，间接使用 redirect 重定向，避免直接使用内部对象locator
      *
-     * @param {Object|string} request 路由参数，对象或者字符串
-     * @param {Obejct} data 需要传递的 query 参数对象
+     * @param {Object|string} options 路由对象或者字符串
      */
 
-    Router.prototype.push = function (request, data) {
-        var path = '';
-        var params = {};
+    Router.prototype.push = function (options) {
+        // 空路由、空对象不处理
+        if (!options || !Object.keys(options).length) return;
 
-        switch (typeof request) {
+        var path = '';
+        var query = {};
+        var queryString = '';
+
+        switch (typeof options) {
             case 'object':
-                path = request.path || path;
-                params = request.params || params;
+                path = options.path || path;
+                query = options.queryString ? {} : options.query || query;
+                queryString = options.queryString || queryString;
                 break;
             case 'string':
-                path = request;
-                params = data;
+                path = options;
                 break;
             default:
                 break;
         }
 
-        // 空路由、空对象不处理
-        if (!path) return;
-        this.locator.redirect(path.replace(/^#/, '') + parseParams(params));
+        this.locator.redirect(
+            path.replace(/^#/, '') + (queryString
+                ? parseQuery(queryString)
+                : parseQuery(query))
+        );
     }
 
     var router = new Router();
@@ -863,7 +878,7 @@
         HTML5Locator: HTML5Locator,
         resolveURL: resolveURL,
         parseURL: parseURL,
-        parseParams: parseParams,
+        parseQuery: parseQuery,
 
         version: '1.2.3'
     };
