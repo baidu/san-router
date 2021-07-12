@@ -690,6 +690,7 @@
     };
 
     Router.prototype.attachCmpt = function (routeItem, e) {
+        var me = this;
         var component = new routeItem.Component();
         component.data.set('route', e);
         if (typeof component.route === 'function') {
@@ -716,6 +717,13 @@
             component: component,
             id: routeItem.id
         });
+
+        // component handler 同时存在
+        if (typeof routeItem.handler === 'function') {
+            setTimeout(function () {
+                routeItem.handler.call(me, e);
+            })
+        }
     };
 
     /**
