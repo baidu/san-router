@@ -16,6 +16,7 @@
     "src",
     "dist"
   ],
+  "types": "types",
   "dependencies": {},
   "author": "otakustay",
   "repository": {
