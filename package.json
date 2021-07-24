@@ -3,12 +3,15 @@
   "version": "1.2.3",
   "description": "Router for San",
   "scripts": {
+    "pretest": "http-server ./ &",
+    "test": "open http://127.0.0.1:8080/test",
     "build": "rm -rf dist && mkdir dist && uglifyjs index.js -mco dist/san-router.js"
   },
   "devDependencies": {
+    "http-server": "^0.12.3",
+    "jasmine-core": "^2.99.1",
     "san": "^3.4.2",
-    "uglify-js": "^2.7.5",
-    "jasmine-core": "^2.99.0"
+    "uglify-js": "^2.7.5"
   },
   "main": "index.js",
   "unpkg": "dist/san-router",
@@ -16,7 +19,6 @@
     "src",
     "dist"
   ],
-  "dependencies": {},
   "author": "otakustay",
   "repository": {
     "type": "git",

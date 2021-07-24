@@ -87,6 +87,32 @@
     }
 
     /**
+     * 解析 js 对象为 location.query 形式的字符串
+     * @param {Object|string} query
+     * @returns {string}
+     */
+    function parseQuery(query) {
+        var res = '';
+
+        if (!query || !Object.keys(query).length) return res;
+
+        if (typeof query === 'string') {
+            return query[0] === '?' ? query : '?' + query;
+        }
+
+        if (typeof query === 'object') {
+            for (var key in query) {
+                if (Object.hasOwnProperty.call(query, key)) {
+                    res += key + '=' + (query[key] ? encodeURIComponent(query[key]) : '') + '&';
+                }
+            }
+            return res ? ('?' + res).slice(0, -1) : '';
+        }
+
+        return res;
+    }
+
+    /**
      * 将 URL 中相对路径部分展开
      *
      * @param {string} source 要展开的url
@@ -326,7 +352,7 @@
     }
 
     HTML5Locator.prototype = new EventTarget();
-    HTML5Locator.prototype.constructor = HashLocator;
+    HTML5Locator.prototype.constructor = HTML5Locator;
 
     /**
      * 开始监听 url 变化
@@ -440,6 +466,7 @@
                 hash: url.hash,
                 queryString: url.queryString,
                 query: url.query,
+                params: url.params,
                 path: url.path,
                 referrer: url.referrer,
                 config: url.config,
@@ -516,6 +543,10 @@
     function Router(options) {
         options = options || {};
         var mode = options.mode || 'hash';
+
+        if (mode === 'html5' && !HTML5Locator.isSupport) {
+            throw new Error('[SAN-ROUTER ERROR] Your navigator doesn\'t supports HTML5!');
+        }
 
         this.routes = [];
         this.routeAlives = [];
@@ -669,11 +700,16 @@
     };
 
     Router.prototype.attachCmpt = function (routeItem, e) {
+        var me = this;
         var component = new routeItem.Component();
         component.data.set('route', e);
         if (typeof component.route === 'function') {
             component.route();
         }
+
+        // 在 san 组件实例中注入 router 路由实例，因此可以直接拿到当前路由实例
+        // 并且实现 this.$router.push('/a/b/c'); 这样的功能，更符合习惯且更简洁
+        component['$router'] = this;
 
         var target = routeItem.target;
         var targetEl = elementSelector(target);
@@ -691,6 +727,13 @@
             component: component,
             id: routeItem.id
         });
+
+        // component handler 同时存在
+        if (typeof routeItem.handler === 'function') {
+            setTimeout(function () {
+                routeItem.handler.call(me, e);
+            })
+        }
     };
 
     /**
@@ -739,6 +782,40 @@
 
         return this;
     };
+
+    /**
+     * 编程式路由函数，间接使用 redirect 重定向，避免直接使用内部对象locator
+     *
+     * @param {Object|string} options 路由对象或者字符串
+     */
+
+    Router.prototype.push = function (options) {
+        // 空路由、空对象不处理
+        if (!options || !Object.keys(options).length) return;
+
+        var path = '';
+        var query = {};
+        var queryString = '';
+
+        switch (typeof options) {
+            case 'object':
+                path = options.path || path;
+                query = options.queryString ? {} : options.query || query;
+                queryString = options.queryString || queryString;
+                break;
+            case 'string':
+                path = options;
+                break;
+            default:
+                break;
+        }
+
+        this.locator.redirect(
+            path.replace(/^#/, '') + (queryString
+                ? parseQuery(queryString)
+                : parseQuery(query))
+        );
+    }
 
     var router = new Router();
 
@@ -801,6 +878,7 @@
         HTML5Locator: HTML5Locator,
         resolveURL: resolveURL,
         parseURL: parseURL,
+        parseQuery: parseQuery,
 
         version: '1.2.3'
     };
