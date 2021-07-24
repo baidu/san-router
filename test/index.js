@@ -5,7 +5,7 @@ var HashLocator = sanRouter.HashLocator;
 var HTML5Locator = sanRouter.HTML5Locator;
 
 var parseURL = sanRouter.parseURL;
-var parseQuery = sanRouter.parseQuery;
+var stringifyURL = sanRouter.stringifyURL;
 
 
 describe('parseURL', function () {
@@ -42,45 +42,103 @@ describe('parseURL', function () {
     });
 });
 
-// parseQuery unit test
-describe('parseQuery', function () {
+// stringifyURL unit test
+describe('stringifyURL', function () {
     it('false invalid value will return empty string :)', function () {
-        var qs = parseQuery('');
-        expect(qs).toBe('');
-        qs = parseQuery(undefined);
-        expect(qs).toBe('');
-        qs = parseQuery(null);
-        expect(qs).toBe('');
-        qs = parseQuery(NaN);
-        expect(qs).toBe('');
+        var result = stringifyURL('');
+        expect(result).toBe('');
+        result = stringifyURL(undefined);
+        expect(result).toBe('');
+        result = stringifyURL(null);
+        expect(result).toBe('');
+        result = stringifyURL(NaN);
+        expect(result).toBe('');
     });
 
-    it('normal case query', function () {
-        var qs = parseQuery({
-            foo: 'bar',
-            bar: 'foo'
+    it('path + query', function () {
+        var result = stringifyURL(
+            {
+                path: '/a/b',
+                query: {
+                    foo: 'bar',
+                    bar: 'foo'
+                }
+            }
+        );
+        expect(result).toBe('/a/b?foo=bar&bar=foo');
+    });
+
+    it('path + queryString', function () {
+        var result = stringifyURL(
+            {
+                path: '/a/b',
+                queryString: 'foo=bar&bar=foo'
+            }
+        );
+        expect(result).toBe('/a/b?foo=bar&bar=foo');
+
+        result = stringifyURL(
+            {
+                path: '/a/b',
+                queryString: '?foo=bar&bar=foo'
+            }
+        );
+        expect(result).toBe('/a/b?foo=bar&bar=foo');
+    });
+
+    it('queryString first', function () {
+        var result = stringifyURL(
+            {
+                path: '/a/b',
+                query: {
+                    foo: 'bar',
+                    bar: 'foo'
+                },
+                queryString: 'a=1'
+            }
+        );
+        expect(result).toBe('/a/b?a=1');
+    });
+
+    it('query should auto encode', function () {
+        var result = stringifyURL({
+            path: './b',
+            query: {
+                foo: '你好',
+                bar: '不好'
+            }
         });
-        expect(qs).toBe('?foo=bar&bar=foo');
+        expect(result).toBe('./b?foo=%E4%BD%A0%E5%A5%BD&bar=%E4%B8%8D%E5%A5%BD');
     });
 
-    it('normal case queryString', function () {
-        var qs = parseQuery('?foo=bar&bar=foo');
-        expect(qs).toBe('?foo=bar&bar=foo');
-        qs = parseQuery('foo=bar&bar=foo');
-        expect(qs).toBe('?foo=bar&bar=foo');
+    it('query fill path', function () {
+        var result = stringifyURL(
+            {
+                path: '/:foo/:bar',
+                query: {
+                    foo: 'bar',
+                    bar: 'foo'
+                }
+            }
+        );
+        expect(result).toBe('/bar/foo');
     });
 
-    it('should auto decode query', function () {
-        var qs = parseQuery({
-            foo: '你好',
-            bar: '不好'
-        });
-        expect(qs).toBe('?foo=%E4%BD%A0%E5%A5%BD&bar=%E4%B8%8D%E5%A5%BD');
-    });
-
-    it('unsupport data type will return empty string', function () {
-        var qs = parseQuery(1);
-        expect(qs).toBe('');
+    it('params fill path, query tailed', function () {
+        var result = stringifyURL(
+            {
+                path: '/:foo/:bar',
+                params: {
+                    foo: 'bar',
+                    bar: 'foo'
+                },
+                query: {
+                    foo: 'bar',
+                    bar: 'foo'
+                }
+            }
+        );
+        expect(result).toBe('/bar/foo?foo=bar&bar=foo');
     });
 });
 
