@@ -93,6 +93,10 @@
      * @return {string}
      */
     function stringifyURL(source) {
+        if (!source) {
+            return '';
+        }
+
         if (typeof source === 'string') {
             return source;
         }
@@ -108,7 +112,7 @@
 
             for (var i = 0, l = pathSegs.length; i < l; i++) {
                 var seg = pathSegs[i];
-                if (/^:([a-z0-9_-]+$/.test(seg)) {
+                if (/^:[a-z0-9_-]+$/.test(seg)) {
                     isPathFillable = true;
                     var name = seg.slice(1);
                     resultPath.push(params && params[name] || query && query[name]);
@@ -120,6 +124,9 @@
         }
 
         var queryString = source.queryString || '';
+        if (queryString.indexOf('?') === 0) {
+            queryString = queryString.slice(1);
+        }
 
         if (!queryString && query && (!isPathFillable || params)) {
             var firstQuery = true;
@@ -133,7 +140,7 @@
             }
         }
 
-        return path + (queryString && '?') + queryString;
+        return resultPath.join('/') + (queryString && '?') + queryString;
     }
 
     /**
