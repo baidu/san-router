@@ -87,29 +87,53 @@
     }
 
     /**
-     * 解析 js 对象为 location.query 形式的字符串
-     * @param {Object|string} query
-     * @returns {string}
+     * 将解析后的URL对象，转换成字符串
+     *
+     * @param {Object} source 解析后的URL对象
+     * @return {string}
      */
-    function parseQuery(query) {
-        var res = '';
-
-        if (!query || !Object.keys(query).length) return res;
-
-        if (typeof query === 'string') {
-            return query[0] === '?' ? query : '?' + query;
+    function stringifyURL(source) {
+        if (typeof source === 'string') {
+            return source;
         }
+        
+        var query = source.query;
+        var params = source.params;
+        var isPathFillable;
 
-        if (typeof query === 'object') {
-            for (var key in query) {
-                if (Object.hasOwnProperty.call(query, key)) {
-                    res += key + '=' + (query[key] ? encodeURIComponent(query[key]) : '') + '&';
+        var path = source.path || '';
+        if (path) {
+            var pathSegs = path.split('/');
+            var resultPath = [];
+
+            for (var i = 0, l = pathSegs.length; i < l; i++) {
+                var seg = pathSegs[i];
+                if (/^:([a-z0-9_-]+$/.test(seg)) {
+                    isPathFillable = true;
+                    var name = seg.slice(1);
+                    resultPath.push(params && params[name] || query && query[name]);
+                }
+                else {
+                    resultPath.push(seg);
                 }
             }
-            return res ? ('?' + res).slice(0, -1) : '';
         }
 
-        return res;
+        var queryString = source.queryString || '';
+
+        if (!queryString && query && (!isPathFillable || params)) {
+            var firstQuery = true;
+
+            for (var key in query) {
+                if (query.hasOwnProperty(key)) {
+                    queryString += (firstQuery ? '' : '&')
+                        + key + '=' + encodeURIComponent(query[key]);
+                    firstQuery = false;
+                }
+            }
+        }
+
+        return path + (queryString && '?') + queryString;
     }
 
     /**
@@ -786,35 +810,17 @@
     /**
      * 编程式路由函数，间接使用 redirect 重定向，避免直接使用内部对象locator
      *
-     * @param {Object|string} options 路由对象或者字符串
+     * @param {Object|string} url 路由地址
+     * @param {Object?} options 重定向的行为配置
+     * @param {boolean?} options.force 是否强制刷新
      */
-
-    Router.prototype.push = function (options) {
+    Router.prototype.push = function (url, options) {
         // 空路由、空对象不处理
-        if (!options || !Object.keys(options).length) return;
-
-        var path = '';
-        var query = {};
-        var queryString = '';
-
-        switch (typeof options) {
-            case 'object':
-                path = options.path || path;
-                query = options.queryString ? {} : options.query || query;
-                queryString = options.queryString || queryString;
-                break;
-            case 'string':
-                path = options;
-                break;
-            default:
-                break;
+        if (!options || !Object.keys(options).length) {
+            return;
         }
 
-        this.locator.redirect(
-            path.replace(/^#/, '') + (queryString
-                ? parseQuery(queryString)
-                : parseQuery(query))
-        );
+        this.locator.redirect(stringifyURL(url), options);
     }
 
     var router = new Router();
@@ -878,7 +884,7 @@
         HTML5Locator: HTML5Locator,
         resolveURL: resolveURL,
         parseURL: parseURL,
-        parseQuery: parseQuery,
+        stringifyURL: stringifyURL,
 
         version: '1.2.3'
     };
