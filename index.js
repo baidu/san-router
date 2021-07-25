@@ -900,8 +900,13 @@
         version: '1.2.3'
     };
 
-    // For AMD
-    if (typeof define === 'function' && define.amd) {
+    
+    if (typeof exports === 'object' && typeof module === 'object') {
+        // For CommonJS
+        exports = module.exports = main;
+    }
+    else if (typeof define === 'function' && define.amd) {
+        // For AMD
         define('san-router', [], main);
     }
     else {
