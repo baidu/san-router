@@ -106,9 +106,9 @@
         var isPathFillable;
 
         var path = source.path || '';
+        var resultPath = [];
         if (path) {
             var pathSegs = path.split('/');
-            var resultPath = [];
 
             for (var i = 0, l = pathSegs.length; i < l; i++) {
                 var seg = pathSegs[i];
@@ -159,29 +159,37 @@
             return source;
         }
 
-        var sourceSegs = sourcePath.split('/');
-        var baseSegs = baseLoc.path.split('/');
-        baseSegs.pop();
+        var path;
+        if (!sourcePath) {
+            path = baseLoc.path;
+        }
+        else {
+            var sourceSegs = sourcePath.split('/');
+            var baseSegs = baseLoc.path.split('/');
+            baseSegs.pop();
 
-        for (var i = 0; i < sourceSegs.length; i++) {
-            var seg = sourceSegs[i];
-            switch (seg) {
-                case '..':
-                    baseSegs.pop();
-                    break;
-                case '.':
-                    break;
-                default:
-                    baseSegs.push(seg);
+            for (var i = 0; i < sourceSegs.length; i++) {
+                var seg = sourceSegs[i];
+                switch (seg) {
+                    case '..':
+                        baseSegs.pop();
+                        break;
+                    case '.':
+                        break;
+                    default:
+                        baseSegs.push(seg);
+                }
             }
+
+            if (baseSegs[0] !== '') {
+                baseSegs.unshift('');
+            }
+            path = baseSegs.join('/');
         }
 
-        if (baseSegs[0] !== '') {
-            baseSegs.unshift('');
-        }
+        
 
-        return baseSegs.join('/')
-            + (sourceLoc.queryString ? '?' + sourceLoc.queryString : '');
+        return path + (sourceLoc.queryString ? '?' + sourceLoc.queryString : '');
     }
 
     function EventTarget() {
@@ -733,14 +741,12 @@
     Router.prototype.attachCmpt = function (routeItem, e) {
         var me = this;
         var component = new routeItem.Component();
+        component['$router'] = this;
         component.data.set('route', e);
         if (typeof component.route === 'function') {
             component.route();
         }
 
-        // 在 san 组件实例中注入 router 路由实例，因此可以直接拿到当前路由实例
-        // 并且实现 this.$router.push('/a/b/c'); 这样的功能，更符合习惯且更简洁
-        component['$router'] = this;
 
         var target = routeItem.target;
         var targetEl = elementSelector(target);
@@ -822,12 +828,10 @@
      * @param {boolean?} options.force 是否强制刷新
      */
     Router.prototype.push = function (url, options) {
-        // 空路由、空对象不处理
-        if (!options || !Object.keys(options).length) {
-            return;
+        url = stringifyURL(url);
+        if (url) {
+            this.locator.redirect(url, options);
         }
-
-        this.locator.redirect(stringifyURL(url), options);
     }
 
     var router = new Router();
