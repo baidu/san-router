@@ -87,6 +87,63 @@
     }
 
     /**
+     * 将解析后的URL对象，转换成字符串
+     *
+     * @param {Object} source 解析后的URL对象
+     * @return {string}
+     */
+    function stringifyURL(source) {
+        if (!source) {
+            return '';
+        }
+
+        if (typeof source === 'string') {
+            return source;
+        }
+        
+        var query = source.query;
+        var params = source.params;
+        var isPathFillable;
+
+        var path = source.path || '';
+        var resultPath = [];
+        if (path) {
+            var pathSegs = path.split('/');
+
+            for (var i = 0, l = pathSegs.length; i < l; i++) {
+                var seg = pathSegs[i];
+                if (/^:[a-z0-9_-]+$/.test(seg)) {
+                    isPathFillable = true;
+                    var name = seg.slice(1);
+                    resultPath.push(params && params[name] || query && query[name]);
+                }
+                else {
+                    resultPath.push(seg);
+                }
+            }
+        }
+
+        var queryString = source.queryString || '';
+        if (queryString.indexOf('?') === 0) {
+            queryString = queryString.slice(1);
+        }
+
+        if (!queryString && query && (!isPathFillable || params)) {
+            var firstQuery = true;
+
+            for (var key in query) {
+                if (query.hasOwnProperty(key)) {
+                    queryString += (firstQuery ? '' : '&')
+                        + key + '=' + encodeURIComponent(query[key]);
+                    firstQuery = false;
+                }
+            }
+        }
+
+        return resultPath.join('/') + (queryString && '?') + queryString;
+    }
+
+    /**
      * 将 URL 中相对路径部分展开
      *
      * @param {string} source 要展开的url
@@ -102,29 +159,37 @@
             return source;
         }
 
-        var sourceSegs = sourcePath.split('/');
-        var baseSegs = baseLoc.path.split('/');
-        baseSegs.pop();
+        var path;
+        if (!sourcePath) {
+            path = baseLoc.path;
+        }
+        else {
+            var sourceSegs = sourcePath.split('/');
+            var baseSegs = baseLoc.path.split('/');
+            baseSegs.pop();
 
-        for (var i = 0; i < sourceSegs.length; i++) {
-            var seg = sourceSegs[i];
-            switch (seg) {
-                case '..':
-                    baseSegs.pop();
-                    break;
-                case '.':
-                    break;
-                default:
-                    baseSegs.push(seg);
+            for (var i = 0; i < sourceSegs.length; i++) {
+                var seg = sourceSegs[i];
+                switch (seg) {
+                    case '..':
+                        baseSegs.pop();
+                        break;
+                    case '.':
+                        break;
+                    default:
+                        baseSegs.push(seg);
+                }
             }
+
+            if (baseSegs[0] !== '') {
+                baseSegs.unshift('');
+            }
+            path = baseSegs.join('/');
         }
 
-        if (baseSegs[0] !== '') {
-            baseSegs.unshift('');
-        }
+        
 
-        return baseSegs.join('/')
-            + (sourceLoc.queryString ? '?' + sourceLoc.queryString : '');
+        return path + (sourceLoc.queryString ? '?' + sourceLoc.queryString : '');
     }
 
     function EventTarget() {
@@ -326,7 +391,7 @@
     }
 
     HTML5Locator.prototype = new EventTarget();
-    HTML5Locator.prototype.constructor = HashLocator;
+    HTML5Locator.prototype.constructor = HTML5Locator;
 
     /**
      * 开始监听 url 变化
@@ -440,6 +505,7 @@
                 hash: url.hash,
                 queryString: url.queryString,
                 query: url.query,
+                params: url.params,
                 path: url.path,
                 referrer: url.referrer,
                 config: url.config,
@@ -516,6 +582,10 @@
     function Router(options) {
         options = options || {};
         var mode = options.mode || 'hash';
+
+        if (mode === 'html5' && !HTML5Locator.isSupport) {
+            throw new Error('[SAN-ROUTER ERROR] Your navigator doesn\'t supports HTML5!');
+        }
 
         this.routes = [];
         this.routeAlives = [];
@@ -669,11 +739,14 @@
     };
 
     Router.prototype.attachCmpt = function (routeItem, e) {
+        var me = this;
         var component = new routeItem.Component();
+        component['$router'] = this;
         component.data.set('route', e);
         if (typeof component.route === 'function') {
             component.route();
         }
+
 
         var target = routeItem.target;
         var targetEl = elementSelector(target);
@@ -691,6 +764,13 @@
             component: component,
             id: routeItem.id
         });
+
+        // component handler 同时存在
+        if (typeof routeItem.handler === 'function') {
+            setTimeout(function () {
+                routeItem.handler.call(me, e);
+            })
+        }
     };
 
     /**
@@ -739,6 +819,20 @@
 
         return this;
     };
+
+    /**
+     * 编程式路由函数，间接使用 redirect 重定向，避免直接使用内部对象locator
+     *
+     * @param {Object|string} url 路由地址
+     * @param {Object?} options 重定向的行为配置
+     * @param {boolean?} options.force 是否强制刷新
+     */
+    Router.prototype.push = function (url, options) {
+        url = stringifyURL(url);
+        if (url) {
+            this.locator.redirect(url, options);
+        }
+    }
 
     var router = new Router();
 
@@ -801,12 +895,18 @@
         HTML5Locator: HTML5Locator,
         resolveURL: resolveURL,
         parseURL: parseURL,
+        stringifyURL: stringifyURL,
 
         version: '1.2.3'
     };
 
-    // For AMD
-    if (typeof define === 'function' && define.amd) {
+    
+    if (typeof exports === 'object' && typeof module === 'object') {
+        // For CommonJS
+        exports = module.exports = main;
+    }
+    else if (typeof define === 'function' && define.amd) {
+        // For AMD
         define('san-router', [], main);
     }
     else {

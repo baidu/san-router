@@ -5,6 +5,7 @@ var HashLocator = sanRouter.HashLocator;
 var HTML5Locator = sanRouter.HTML5Locator;
 
 var parseURL = sanRouter.parseURL;
+var stringifyURL = sanRouter.stringifyURL;
 
 
 describe('parseURL', function () {
@@ -38,6 +39,106 @@ describe('parseURL', function () {
         expect(url.query.a[0]).toBe('1');
         expect(url.query.a[1]).toBe('3');
         expect(url.query.name).toBe('2');
+    });
+});
+
+// stringifyURL unit test
+describe('stringifyURL', function () {
+    it('false invalid value will return empty string :)', function () {
+        var result = stringifyURL('');
+        expect(result).toBe('');
+        result = stringifyURL(undefined);
+        expect(result).toBe('');
+        result = stringifyURL(null);
+        expect(result).toBe('');
+        result = stringifyURL(NaN);
+        expect(result).toBe('');
+    });
+
+    it('path + query', function () {
+        var result = stringifyURL(
+            {
+                path: '/a/b',
+                query: {
+                    foo: 'bar',
+                    bar: 'foo'
+                }
+            }
+        );
+        expect(result).toBe('/a/b?foo=bar&bar=foo');
+    });
+
+    it('path + queryString', function () {
+        var result = stringifyURL(
+            {
+                path: '/a/b',
+                queryString: 'foo=bar&bar=foo'
+            }
+        );
+        expect(result).toBe('/a/b?foo=bar&bar=foo');
+
+        result = stringifyURL(
+            {
+                path: '/a/b',
+                queryString: '?foo=bar&bar=foo'
+            }
+        );
+        expect(result).toBe('/a/b?foo=bar&bar=foo');
+    });
+
+    it('queryString first', function () {
+        var result = stringifyURL(
+            {
+                path: '/a/b',
+                query: {
+                    foo: 'bar',
+                    bar: 'foo'
+                },
+                queryString: 'a=1'
+            }
+        );
+        expect(result).toBe('/a/b?a=1');
+    });
+
+    it('query should auto encode', function () {
+        var result = stringifyURL({
+            path: './b',
+            query: {
+                foo: '你好',
+                bar: '不好'
+            }
+        });
+        expect(result).toBe('./b?foo=%E4%BD%A0%E5%A5%BD&bar=%E4%B8%8D%E5%A5%BD');
+    });
+
+    it('query fill path', function () {
+        var result = stringifyURL(
+            {
+                path: '/:foo/:bar',
+                query: {
+                    foo: 'bar',
+                    bar: 'foo'
+                }
+            }
+        );
+        expect(result).toBe('/bar/foo');
+    });
+
+    it('params fill path, query tailed', function () {
+        var result = stringifyURL(
+            {
+                path: '/:foo/:bar',
+                params: {
+                    foo: 'bar',
+                    bar: 'foo'
+                },
+                query: {
+                    foo: 'bar',
+                    bar: 'foo'
+                }
+            }
+        );
+        expect(result).toBe('/bar/foo?foo=bar&bar=foo');
     });
 });
 
@@ -279,7 +380,7 @@ var TestComponent = san.defineComponent({
 
 router.add({
     rule: '/main-route/:name',
-    handler: function () {alert('if u see this, it must be an error!')},
+    handler: function () {},
     target: '#main',
     Component: TestComponent
 });
@@ -411,8 +512,22 @@ describe('Router', function () {
     });
 
     it('by component, route should init component and attach to target', function (done) {
-        location.hash = '/main-route/erik';
+        var r;
+        router.add({
+            rule: '/router-cmpt/1/:name',
+            target: '#main',
+            Component: san.defineComponent({
+                template: '<p title="{{route.query.name}}">Hello {{route.query.name}}</p>',
+                created: function () {
+                    r = this.$router;
+                }
+            })
+        });
+
+        location.hash = '/router-cmpt/1/erik';
         setTimeout(function () {
+            expect(r === router).toBeTruthy();
+
             var ps = document.getElementById('main').getElementsByTagName('p');
             expect(ps[0].title).toBe('erik');
             location.hash = '/null';
@@ -554,7 +669,7 @@ describe('Component Link', function () {
                 expect(location.hash).toBe('#/router-link1');
                 app.dispose();
 
-                setTimeout(done, 100);
+                setTimeout(done, 200);
                 return;
             }
 
@@ -567,36 +682,34 @@ describe('Component Link', function () {
     it('in router hash mode, relative path', function (done) {
         router.locator.redirect('/router-link2/level1/level2/level3');
 
-        setTimeout(function () {
-            var App = san.defineComponent({
-                components: {
-                    'router-link': Link
-                },
+        var App = san.defineComponent({
+            components: {
+                'router-link': Link
+            },
 
-                template: '<div><router-link to="../b/c">please click here quickly 2</router-link></div>'
-            });
+            template: '<div><router-link to="../b/c">please click here quickly 2</router-link></div>'
+        });
 
-            var app = new App();
-            app.attach(document.getElementById('main'));
+        var app = new App();
+        app.attach(document.getElementById('main'));
 
-            var oldHash = location.hash;
-            var doneDetect = function () {
-                if (location.hash !== oldHash) {
-                    var a = document.getElementById('main').getElementsByTagName('a')[0];
-                    expect(a.href.indexOf('#/router-link2/level1/b/c') >= 0)
-                        .toBeTruthy();
-                    expect(location.hash).toBe('#/router-link2/level1/b/c');
-                    app.dispose();
+        var oldHash = location.hash;
+        var doneDetect = function () {
+            if (location.hash !== oldHash) {
+                var a = document.getElementById('main').getElementsByTagName('a')[0];
+                expect(a.href.indexOf('#/router-link2/level1/b/c') >= 0)
+                    .toBeTruthy();
+                expect(location.hash).toBe('#/router-link2/level1/b/c');
+                app.dispose();
 
-                    setTimeout(done, 100);
-                    return;
-                }
-
-                setTimeout(doneDetect, 500);
-            };
+                setTimeout(done, 200);
+                return;
+            }
 
             setTimeout(doneDetect, 500);
-        }, 100);
+        };
+
+        setTimeout(doneDetect, 500);
     });
 
 
@@ -693,7 +806,7 @@ describe('Synthesis', function () {
                 routeTimes = this.data.get('routeTimes');
             },
 
-            template: '<div><router-link to="./errorrik">Click here to hash route, quickly</router-link>  <b title="{{route.query.name}}">{{route.query.name}}</b></div>'
+            template: '<div><router-link to="./errorrik">Click here to hash route</router-link>  <b title="{{route.query.name}}">{{route.query.name}}</b></div>'
         });
 
         router.add({
@@ -708,7 +821,7 @@ describe('Synthesis', function () {
             expect(routeTimes).toBe(1);
             expect(document.getElementById('main').getElementsByTagName('b')[0].title).toBe('erik');
             detectDone();
-        }, 500);
+        }, 200);
 
 
         function detectDone() {
@@ -736,6 +849,7 @@ describe('Synthesis', function () {
         router.setMode('html5');
 
         var routeTimes = 0;
+        var myApp;
         var App = san.defineComponent({
             initData: function () {
                 return {
@@ -748,6 +862,7 @@ describe('Synthesis', function () {
             },
 
             route: function () {
+                myApp = this;
                 this.data.set('routeTimes', this.data.get('routeTimes') + 1);
                 routeTimes = this.data.get('routeTimes');
             },
@@ -765,6 +880,7 @@ describe('Synthesis', function () {
 
 
         setTimeout(function () {
+            expect(myApp.$router === router).toBeTruthy();
             expect(routeTimes).toBe(1);
             expect(document.getElementById('main').getElementsByTagName('b')[0].title).toBe('erik');
             detectDone();
@@ -788,11 +904,428 @@ describe('Synthesis', function () {
             expect(routeTimes).toBe(2);
             expect(document.getElementById('main').getElementsByTagName('b').length).toBe(0);
 
-            router.stop();
             done();
         }
     });
-
-
 });
+
+describe('Component $router', function() {
+    beforeAll(function (done) {
+        router.setMode('hash');
+        location.hash = nextURL();
+
+        setTimeout(function () {done();}, 50)
+    });
+
+    afterEach(function (done) {
+        location.hash = nextURL();
+
+        setTimeout(function () {done();}, 200)
+    });
+
+    it('$router exists', function (done) {
+        var myApp;
+        var App = san.defineComponent({
+            template: '<div>something for nothing.</div>',
+            inited: function () {
+                myApp = this;
+            }
+        });
+
+        router.add({
+            rule: '/dr/1',
+            Component: App
+        });
+
+        location.hash = '/dr/1';
+        setTimeout(function () {
+            expect(myApp.$router).toBe(router);
+            done();
+        }, 222)
+    });
+
+    it('use push', function (done) {
+        var myApp;
+        var App = san.defineComponent({
+            initData: function () {
+                return {
+                    name: 'router'
+                };
+            },
+            template: '<p title="{{route.query.name || name}}">{{route.query.name || name}}</p>',
+            inited: function () {
+                myApp = this;
+            }
+        });
+
+        router.add({
+            rule: '/dr/2',
+            Component: App
+        });
+
+        router.add({
+            rule: '/dr/2/:name',
+            Component: App
+        });
+
+        location.hash = '/dr/2';
+        setTimeout(function () {
+            var ps = document.getElementById('main').getElementsByTagName('p');
+            expect(ps[0].title).toBe('router');
+
+            myApp.$router.push('/dr/2/erik');
+            setTimeout(function () {
+                expect(ps[0].title).toBe('erik');
+    
+                done();
+            }, 222)
+        }, 222)
+    });
+
+    it('use push with obj, add query', function (done) {
+        var myApp;
+        var App = san.defineComponent({
+            initData: function () {
+                return {
+                    name: 'router'
+                };
+            },
+            template: '<p title="{{route.query.name || name}}">{{route.query.name || name}}</p>',
+            inited: function () {
+                myApp = this;
+            }
+        });
+
+        router.add({
+            rule: '/dr/3',
+            Component: App
+        });
+
+        location.hash = '/dr/3';
+        setTimeout(function () {
+            var ps = document.getElementById('main').getElementsByTagName('p');
+            expect(ps[0].title).toBe('router');
+
+            myApp.$router.push({
+                path: '/dr/3',
+                query: {
+                    name: 'erik'
+                }
+            });
+            setTimeout(function () {
+                expect(ps[0].title).toBe('erik');
+                expect(location.hash).toBe('#/dr/3?name=erik');
+    
+                done();
+            }, 222)
+        }, 222)
+    });
+
+    it('use push with obj, add queryString', function (done) {
+        var myApp;
+        var App = san.defineComponent({
+            initData: function () {
+                return {
+                    name: 'router'
+                };
+            },
+            template: '<p title="{{route.query.name || name}}">{{route.query.name || name}}</p>',
+            inited: function () {
+                myApp = this;
+            }
+        });
+
+        router.add({
+            rule: '/dr/4',
+            Component: App
+        });
+
+        location.hash = '/dr/4';
+        setTimeout(function () {
+            var ps = document.getElementById('main').getElementsByTagName('p');
+            expect(ps[0].title).toBe('router');
+
+            myApp.$router.push({
+                path: '/dr/4',
+                queryString: 'name=erik2'
+            });
+            setTimeout(function () {
+                expect(ps[0].title).toBe('erik2');
+                expect(location.hash).toBe('#/dr/4?name=erik2');
+    
+                done();
+            }, 222)
+        }, 222)
+    });
+
+    it('use push with obj, add query, no path', function (done) {
+        var myApp;
+        var App = san.defineComponent({
+            initData: function () {
+                return {
+                    name: 'router'
+                };
+            },
+            template: '<p title="{{route.query.name || name}}">{{route.query.name || name}}</p>',
+            inited: function () {
+                myApp = this;
+            }
+        });
+
+        router.add({
+            rule: '/dr/5',
+            Component: App
+        });
+
+        location.hash = '/dr/5';
+        setTimeout(function () {
+            var ps = document.getElementById('main').getElementsByTagName('p');
+            expect(ps[0].title).toBe('router');
+
+            myApp.$router.push({
+                query: {
+                    name: 'erik'
+                }
+            });
+
+            setTimeout(function () {
+                expect(location.hash).toBe('#/dr/5?name=erik');
+                expect(ps[0].title).toBe('erik');
+    
+                done();
+            }, 222)
+        }, 222)
+    });
+
+    it('use push with obj, fill by query', function (done) {
+        var myApp;
+        var App = san.defineComponent({
+            initData: function () {
+                return {
+                    name: 'router'
+                };
+            },
+            template: '<p title="{{route.query.name || name}}">{{route.query.name || name}}</p>',
+            inited: function () {
+                myApp = this;
+            }
+        });
+
+        router.add({
+            rule: '/dr/6',
+            Component: App
+        });
+
+        router.add({
+            rule: '/dr/6/:name',
+            Component: App
+        });
+
+        location.hash = '/dr/6';
+        setTimeout(function () {
+            var ps = document.getElementById('main').getElementsByTagName('p');
+            expect(ps[0].title).toBe('router');
+
+            myApp.$router.push({
+                path: '/dr/6/:name',
+                query: {
+                    name: 'erik'
+                }
+            });
+            setTimeout(function () {
+                expect(ps[0].title).toBe('erik');
+                expect(location.hash).toBe('#/dr/6/erik');
+    
+                done();
+            }, 222)
+        }, 222)
+    });
+
+
+    it('use push with obj, fill by params', function (done) {
+        var myApp;
+        var App = san.defineComponent({
+            initData: function () {
+                return {
+                    name: 'router'
+                };
+            },
+            template: '<p title="{{route.query.name || name}}">{{route.query.name || name}}</p>',
+            inited: function () {
+                myApp = this;
+            }
+        });
+
+        router.add({
+            rule: '/dr/7',
+            Component: App
+        });
+
+        router.add({
+            rule: '/dr/7/:name',
+            Component: App
+        });
+
+        location.hash = '/dr/7';
+        setTimeout(function () {
+            var ps = document.getElementById('main').getElementsByTagName('p');
+            expect(ps[0].title).toBe('router');
+
+            myApp.$router.push({
+                path: '/dr/7/:name',
+                params: {
+                    name: 'erik'
+                }
+            });
+            setTimeout(function () {
+                expect(ps[0].title).toBe('erik');
+                expect(location.hash).toBe('#/dr/7/erik');
+    
+                done();
+            }, 222)
+        }, 222)
+    });
+
+
+    it('use push with obj, add more queries', function (done) {
+        var myApp;
+        var App = san.defineComponent({
+            initData: function () {
+                return {
+                    name: 'router'
+                };
+            },
+            template: '<p title="{{route.query.name || name}}">{{route.query.name || name}}</p>',
+            inited: function () {
+                myApp = this;
+            }
+        });
+
+        router.add({
+            rule: '/dr/8',
+            Component: App
+        });
+
+        location.hash = '/dr/8';
+        setTimeout(function () {
+            var ps = document.getElementById('main').getElementsByTagName('p');
+            expect(ps[0].title).toBe('router');
+
+            myApp.$router.push({
+                query: {
+                    name: 'erik',
+                    sex: 1,
+                    age: 18
+                }
+            });
+            setTimeout(function () {
+                expect(ps[0].title).toBe('erik');
+                expect(location.hash.indexOf('#/dr/8')).toBe(0);
+                expect(location.hash).toContain('name=erik');
+                expect(location.hash).toContain('age=18');
+                expect(location.hash).toContain('sex=1');
+    
+                done();
+            }, 222)
+        }, 222)
+    });
+
+    notIE && it('use push with obj, fill by params, html5 mode', function (done) {
+
+        router.setMode('html5');
+
+        var myApp;
+        var App = san.defineComponent({
+            initData: function () {
+                return {
+                    name: 'router'
+                };
+            },
+            template: '<p title="{{route.query.name || name}}">{{route.query.name || name}}</p>',
+            inited: function () {
+                myApp = this;
+            }
+        });
+
+        router.add({
+            rule: '/dr/9',
+            Component: App
+        });
+
+        router.add({
+            rule: '/dr/9/:name',
+            Component: App
+        });
+
+
+        router.push('/dr/9');
+        setTimeout(function () {
+            var ps = document.getElementById('main').getElementsByTagName('p');
+            expect(ps[0].title).toBe('router');
+
+            myApp.$router.push({
+                path: '/dr/9/:name',
+                params: {
+                    name: 'erik'
+                }
+            });
+            setTimeout(function () {
+                expect(ps[0].title).toBe('erik');
+                expect(location.pathname).toBe('/dr/9/erik');
+    
+                history.back();
+                history.back();
+
+                setTimeout(done, 200);
+            }, 222)
+        }, 222)
+    });
+
+    notIE && it('use push with obj, fill by query, html5 mode', function (done) {
+
+        router.setMode('html5');
+
+        var myApp;
+        var App = san.defineComponent({
+            initData: function () {
+                return {
+                    name: 'router'
+                };
+            },
+            template: '<p title="{{route.query.name || name}}">{{route.query.name || name}}</p>',
+            inited: function () {
+                myApp = this;
+            }
+        });
+
+        router.add({
+            rule: '/dr/10',
+            Component: App
+        });
+
+
+        router.push('/dr/10');
+        setTimeout(function () {
+            var ps = document.getElementById('main').getElementsByTagName('p');
+            expect(ps[0].title).toBe('router');
+
+            myApp.$router.push({
+                query: {
+                    name: 'erik'
+                }
+            });
+            setTimeout(function () {
+                expect(ps[0].title).toBe('erik');
+                expect(location.pathname).toBe('/dr/10');
+                expect(location.href).toContain('name=erik');
+    
+                history.back();
+                history.back();
+
+                setTimeout(done, 200);
+            }, 222)
+        }, 222)
+    });
+});
+
 
