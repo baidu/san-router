@@ -209,6 +209,31 @@ router.listen(function (e) {
 
 - `string` mode - 路由模式，hash | html5
 
+### push({Object}url[,{Object}options])
+
+`说明`
+
+功能类似 router.locator.redict 方法，并增加了 query 对象的处理。同时在 san 组件中可通过实例的 `$router` 方法访问当前路由实例
+
+```js
+router.push({
+    query: {
+        name: 'erik',
+        sex: 1,
+        age: 18
+    }
+});
+
+// san 组件中
+this.$router.push({
+    query: {
+        name: 'erik',
+        sex: 1,
+        age: 18
+    }
+});
+```
+
 #### start()
 
 `说明`
@@ -244,11 +269,16 @@ san.defineComponent({
 });
 ```
 
-
 ## ChangeLogs
+
+### 1.2.4
+
+- [feature] 增加 `router.push` 方法
+
+- [feature] 在 san 组件中通过 `this.$router` 可以访问 router 实例
+
+- [fix] 修复 HashLocator 原型指向问题
 
 ### 1.2.3
 
 - [fix] 修复在 san 3.10.2 版本不支持 callHook 的问题，不再依赖此实现。
-
-
