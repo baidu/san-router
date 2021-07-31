@@ -3,8 +3,8 @@
   "version": "1.2.3",
   "description": "Router for San",
   "scripts": {
-    "pretest": "http-server ./ &",
-    "test": "open http://127.0.0.1:8080/test",
+    "pretest": "npm run build && http-server ./ &",
+    "test": "open http://127.0.0.1:8080/test/",
     "build": "rm -rf dist && mkdir dist && uglifyjs index.js -mco dist/san-router.js"
   },
   "devDependencies": {
@@ -16,8 +16,9 @@
   "main": "index.js",
   "unpkg": "dist/san-router",
   "files": [
-    "src",
-    "dist"
+    "dist",
+    "types/*.d.ts",
+    "types/*.json"
   ],
   "types": "types",
   "dependencies": {},
