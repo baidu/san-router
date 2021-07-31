@@ -1,6 +1,6 @@
 {
   "name": "san-router",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Router for San",
   "scripts": {
     "pretest": "npm run build && http-server ./ &",

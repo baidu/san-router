@@ -273,10 +273,8 @@ san.defineComponent({
 
 ### 1.2.4
 
-- [feature] 增加 `router.push` 方法
-
+- [feature] `router` 增加 `push` 方法
 - [feature] 在 san 组件中通过 `this.$router` 可以访问 router 实例
-
 - [fix] 修复 HashLocator 原型指向问题
 
 ### 1.2.3
