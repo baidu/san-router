@@ -77,7 +77,7 @@ export class HTML5Locator extends Locator {
 
 export function resolveURL(source: Array<string>, base: Array<string>): string
 export function parseURL(url: string): Location
-export function parseQuery(query?: string | Query): string
+export function stringifyURL(source: Location): string
 
 export class Router {
   mode: Mode
