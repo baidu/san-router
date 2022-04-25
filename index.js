@@ -100,7 +100,7 @@
         if (typeof source === 'string') {
             return source;
         }
-        
+
         var query = source.query;
         var params = source.params;
         var isPathFillable;
@@ -187,7 +187,7 @@
             path = baseSegs.join('/');
         }
 
-        
+
 
         return path + (sourceLoc.queryString ? '?' + sourceLoc.queryString : '');
     }
@@ -374,6 +374,10 @@
      * @class
      */
     function HTML5Locator() {
+        if (!HTML5Locator.isSupport) {
+            throw new Error('[SAN-ROUTER ERROR] Your navigator doesn\'t supports HTML5!');
+        }
+
         this.current = getLocation();
         this.referrer = '';
 
@@ -465,32 +469,9 @@
      */
     function getLocatorRedirectHandler(router) {
         return function (e) {
-            var url = parseURL(e.url);
-            var routeItem;
-
-            for (var i = 0; i < router.routes.length; i++) {
-                var item = router.routes[i];
-                var match = item.rule.exec(url.path);
-
-                if (match) {
-                    routeItem = item;
-
-                    // fill params
-                    var keys = item.keys || [];
-                    for (var j = 1; j < match.length; j++) {
-                        var key = keys[j] || j;
-                        var value = match[j];
-                        url.query[key] = value;
-                        url.params[key] = value;
-                    }
-
-                    // fill referrer
-                    url.referrer = e.referrer;
-                    url.config = item.config;
-
-                    break;
-                }
-            }
+            var matchedRoute = router.getMatchedRoute(e);
+            var url = matchedRoute.url;
+            var routeItem = matchedRoute.routeItem;
 
             var i = 0;
             var state = 1;
@@ -583,10 +564,6 @@
         options = options || {};
         var mode = options.mode || 'hash';
 
-        if (mode === 'html5' && !HTML5Locator.isSupport) {
-            throw new Error('[SAN-ROUTER ERROR] Your navigator doesn\'t supports HTML5!');
-        }
-
         this.routes = [];
         this.routeAlives = [];
         this.listeners = [];
@@ -597,12 +574,57 @@
     }
 
     /**
+     * 获取 url 匹配到的 route 信息
+     *
+     * @param {Object} san-router 实例
+     * @param {*} e url 信息
+     * @returns
+     */
+    Router.prototype.getMatchedRoute = function (e) {
+        var url = parseURL(e.url);
+        var routeItem;
+
+        for (var i = 0; i < this.routes.length; i++) {
+            var item = this.routes[i];
+            var match = item.rule.exec(url.path);
+
+            if (match) {
+                routeItem = item;
+
+                // fill params
+                var keys = item.keys || [];
+                for (var j = 1; j < match.length; j++) {
+                    var key = keys[j] || j;
+                    var value = match[j];
+                    url.query[key] = value;
+                    url.params[key] = value;
+                }
+
+                // fill referrer
+                url.referrer = e.referrer;
+                url.config = item.config;
+
+                break;
+            }
+        }
+
+        return {
+            url: url,
+            routeItem: routeItem
+        };
+    }
+
+    /**
      * 添加路由监听器
      *
      * @param {function(e, config)} listener 监听器
      */
     Router.prototype.listen = function (listener) {
         this.listeners.push(listener);
+        var that = this;
+        return function () {
+            that.unlisten(listener);
+        }
     };
 
     /**
@@ -785,7 +807,7 @@
      * @param {string} config.target 路由组件要渲染到的目标位置
      * @return {Object} san-router 实例
      */
-    Router.prototype.add = function (config) {
+    Router.prototype._add = function (config) {
         var rule = config.rule;
         var keys = [''];
 
@@ -821,6 +843,24 @@
     };
 
     /**
+     * 添加路由项，支持单一数据或者数组配置
+     *
+     * @public
+     * @param {Object|Array<Object>} config 路由项配置
+     * @return {Object} san-router 实例
+     */
+    Router.prototype.add = function (config) {
+        if (Object.prototype.toString.call(config) === '[object Array]') {
+            for (var i = 0, l = config.length; i < l; i++) {
+                this._add(config[i]);
+            }
+            return this;
+        }
+
+        return this._add(config);
+    }
+
+    /**
      * 编程式路由函数，间接使用 redirect 重定向，避免直接使用内部对象locator
      *
      * @param {Object|string} url 路由地址
@@ -835,6 +875,119 @@
     }
 
     var router = new Router();
+
+    var extendsAsClass;
+    try {
+        extendsAsClass = new Function('RawClass', "return class extends RawClass {}");
+    }
+    catch (ex) {}
+    function extendsAsFunc(RawClass) {
+        var F = new Function();
+        F.prototype = RawClass.prototype;
+
+        var NewClass = function (option) {
+            return RawClass.call(this, option) || this;
+        };
+
+        NewClass.prototype = new F();
+        NewClass.prototype.constructor = NewClass;
+
+        if (F.prototype.hasOwnProperty('aPack')) {
+            NewClass.prototype.aPack = F.prototype.aPack;
+        }
+
+        return NewClass;
+    }
+    function extendsComponent(ComponentClass) {
+        var NewComponentClass;
+        if (ComponentClass.toString().indexOf('class') === 0) {
+            NewComponentClass = extendsAsClass(ComponentClass);
+        }
+        else {
+            NewComponentClass = extendsAsFunc(ComponentClass);
+        }
+
+        NewComponentClass.template = ComponentClass.template;
+        NewComponentClass.components = ComponentClass.components;
+        NewComponentClass.trimWhitespace = ComponentClass.trimWhitespace;
+        NewComponentClass.delimiters = ComponentClass.delimiters;
+        NewComponentClass.autoFillStyleAndId = ComponentClass.autoFillStyleAndId;
+        NewComponentClass.filters = ComponentClass.filters;
+        NewComponentClass.computed = ComponentClass.computed;
+        NewComponentClass.aPack = ComponentClass.aPack;
+        NewComponentClass.messages = ComponentClass.messages;
+
+        return NewComponentClass;
+    }
+
+    /**
+     * 为特定组件注入 $router 与 data route
+     *
+     * @param {*} ComponentClass 需要注入 data route 以及 proto.$router 的 san 组件
+     * @param {*} customRouter 自定义的 router
+     * @returns 高阶组件
+     */
+    function withRoute (ComponentClass, customRouter) {
+        var componentProto;
+        var ReturnTarget;
+        var extProto;
+
+        if (typeof ComponentClass === 'function') {
+            ReturnTarget = extendsComponent(ComponentClass);
+            componentProto = ComponentClass.prototype;
+            extProto = ReturnTarget.prototype;
+        }
+        else {
+            componentProto = ComponentClass || {};
+            ReturnTarget = Object.assign({}, ComponentClass);
+            extProto = ReturnTarget;
+        }
+
+        var injectedRouter = customRouter || router;
+
+        // 注入 $router 以及 data route
+        var inited = componentProto.inited;
+        extProto.inited = function () {
+            if (!(this['$router'] instanceof Router)) {
+                this['$router'] = injectedRouter;
+                // 路由信息初始值
+                var e = injectedRouter.getMatchedRoute(
+                    {
+                        url: injectedRouter.locator.current,
+                        referrer: injectedRouter.locator.referrer
+                    }
+                ).url;
+                this.data.set('route', e);
+                // 路由信息实时获取
+                var that = this;
+                this['$unlistenHandlerForSanRouter'] = injectedRouter.listen(function (e) {
+                    that && that.data.set('route', e);
+                });
+            }
+
+            if (typeof inited === 'function') {
+                inited.call(this);
+            }
+        };
+
+        // dispose 监听器
+        var disposed = componentProto.disposed;
+        extProto.disposed = function () {
+            var unlisten = this['$unlistenHandlerForSanRouter'];
+            this['$unlistenHandlerForSanRouter'] = null;
+
+            // disposer
+            if (typeof unlisten === 'function') {
+                unlisten();
+            }
+
+            if (typeof disposed === 'function') {
+                disposed.call(this);
+            }
+        };
+
+        return ReturnTarget;
+    }
 
     var main = {
         /**
@@ -889,6 +1042,7 @@
             }
         },
 
+        withRoute: withRoute,
         router: router,
         Router: Router,
         HashLocator: HashLocator,
@@ -900,7 +1054,7 @@
         version: '1.2.4'
     };
 
-    
+
     if (typeof exports === 'object' && typeof module === 'object') {
         // For CommonJS
         exports = module.exports = main;
