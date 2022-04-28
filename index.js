@@ -490,6 +490,7 @@
                 path: listenerSource.path,
                 referrer: e.referrer,
                 config: routeInfo ? routeInfo.data.config : null,
+                data: routeInfo && routeInfo.data,
                 resume: next,
                 suspend: function () {
                     state = 0;
@@ -567,6 +568,7 @@
         this.routes = [];
         this.routeAlives = [];
         this.listeners = [];
+        this.withRouteListeners = [];
 
 
         this.locatorRedirectHandler = getLocatorRedirectHandler(this);
@@ -625,10 +627,6 @@
      */
     Router.prototype.listen = function (listener) {
         this.listeners.push(listener);
-        var that = this;
-        return function () {
-            that.unlisten(listener);
-        }
     };
 
     /**
@@ -641,6 +639,19 @@
         while (len--) {
             if (this.listeners[len] === listener) {
                 this.listeners.splice(len, 1);
+            }
+        }
+    };
+
+    Router.prototype.listenWithRoute = function (listener) {
+        this.withRouteListeners.push(listener);
+    };
+
+    Router.prototype.unlistenWithRoute = function (listener) {
+        var len = this.withRouteListeners.length;
+        while (len--) {
+            if (this.withRouteListeners[len] === listener) {
+                this.withRouteListeners.splice(len, 1);
             }
         }
     };
@@ -719,6 +730,7 @@
         var routeItem = routeInfo.route;
         var isUpdateAlive = false;
         var len = this.routeAlives.length;
+        var withRouteListeners = this.withRouteListeners.slice(0);
 
         while (len--) {
             var routeAlive = this.routeAlives[len];
@@ -736,31 +748,33 @@
             }
         }
 
-        if (isUpdateAlive) {
-            return;
-        }
-
-        if (routeItem.Component) {
-            if (isComponent(routeItem.Component)) {
-                this.attachCmpt(routeInfo);
+        if (!isUpdateAlive) {
+            if (routeItem.Component) {
+                if (isComponent(routeItem.Component)) {
+                    this.attachCmpt(routeInfo);
+                }
+                else {
+                    var me = this;
+                    routeItem.Component().then(
+                        function (Cmpt) { // eslint-disable-line
+                            if (isComponent(Cmpt)) {
+                                routeItem.Component = Cmpt;
+                            }
+                            else if (Cmpt.__esModule && isComponent(Cmpt['default'])) {
+                                routeItem.Component = Cmpt['default'];
+                            }
+                            me.attachCmpt(routeInfo);
+                        }
+                    );
+                }
             }
             else {
-                var me = this;
-                routeItem.Component().then(
-                    function (Cmpt) { // eslint-disable-line
-                        if (isComponent(Cmpt)) {
-                            routeItem.Component = Cmpt;
-                        }
-                        else if (Cmpt.__esModule && isComponent(Cmpt['default'])) {
-                            routeItem.Component = Cmpt['default'];
-                        }
-                        me.attachCmpt(routeInfo);
-                    }
-                );
+                routeItem.handler.call(this, routeInfo.data);
             }
         }
-        else {
-            routeItem.handler.call(this, routeInfo.data);
+
+        for (var i = 0, l = withRouteListeners.length; i < l; i++) {
+            withRouteListeners[i](routeInfo);
         }
     };
 
@@ -931,7 +945,7 @@
      * @param {*} customRouter 自定义的 router
      * @returns 高阶组件
      */
-    function withRoute (ComponentClass, customRouter) {
+    function withRoute(ComponentClass, customRouter) {
         var componentProto;
         var ReturnTarget;
         var extProto;
@@ -952,20 +966,28 @@
         // 注入 $router 以及 data route
         var inited = componentProto.inited;
         extProto.inited = function () {
-            if (!(this['$router'] instanceof Router)) {
-                this['$router'] = injectedRouter;
-                // 路由信息初始值
-                var e = injectedRouter.match(
+            this.$router = injectedRouter;
+
+            this.data.set(
+                'route', 
+                injectedRouter.match(
                     injectedRouter.locator.current,
                     injectedRouter.locator.referrer
-                );
-                this.data.set('route', e.data);
-                // 路由信息实时获取
-                var that = this;
-                this['$unlistenHandlerForSanRouter'] = injectedRouter.listen(function (e) {
-                    that && that.data.set('route', e);
-                });
+                ).data
+            );
+            if (typeof this.route === 'function') {
+                this.route();
             }
+
+            // 路由信息实时获取
+            var me = this;
+            this.__routerListener = function (e) {
+                me.data.set('route', e.data);
+                if (typeof me.route === 'function') {
+                    me.route();
+                }
+            }
+            injectedRouter.listenWithRoute(this.__routerListener);
 
             if (typeof inited === 'function') {
                 inited.call(this);
@@ -975,12 +997,10 @@
         // dispose 监听器
         var disposed = componentProto.disposed;
         extProto.disposed = function () {
-            var unlisten = this['$unlistenHandlerForSanRouter'];
-            this['$unlistenHandlerForSanRouter'] = null;
-
-            // disposer
-            if (typeof unlisten === 'function') {
-                unlisten();
+            if (this.$router) {
+                this.$router.unlistenWithRoute(this.__routerListener);
+                this.__routerListener = null;
+                this.$router = null;
             }
 
             if (typeof disposed === 'function') {
