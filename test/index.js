@@ -802,88 +802,6 @@ describe('Component Link', function () {
 
         setTimeout(doneDetect, 500);
     });
-
-    notIE && it('html5 mode, withRoute link to route', function (done) {
-        router.setMode('html5');
-        var myApp;
-
-        var Header = san.defineComponent({
-            template: `
-                <div>
-                    <router-link to="./home">click to home</router-link>
-                    <router-link to="./about">click to about</router-link>
-                </div>
-            `,
-            components: {
-                'router-link': Link
-            }
-        });
-
-        var Home = san.defineComponent({
-            template: '<div class="content">home</div>'
-        });
-        var About = san.defineComponent({
-            template: '<div class="content">about</div>'
-        });
-        var Content = withRoute(san.defineComponent({
-            template: `
-                <div class="abc" style="width:100px;height:100px;background-color:green">
-                    <div s-is="route.query.name"></div>
-                </div>
-            `,
-            inited: function () {
-                myApp = this;
-            },
-            components: {
-                'home': Home,
-                'about': About
-            }
-        }));
-        var App = san.defineComponent({
-            template: `
-                <div>
-                    <header1 s-ref="disposeThis"></header1>
-                    <header2 s-ref="disposeThat"></header2>
-                    <header1></header1>
-                    <content1></content1>
-                </div>
-            `,
-            components: {
-                'header1': Header,
-                'header2': Header,
-                'content1': Content
-            },
-            attached() {
-                this.ref('disposeThis').dispose();
-                this.ref('disposeThat').dispose();
-            }
-        });
-
-        router.add([
-            {
-                rule: '/synthesis/switch/:name',
-                Component: App
-            }
-        ]);
-        router.locator.redirect('/synthesis/switch/none');
-
-        var oldHref = location.href;
-        var doneDetect = function () {
-            if (location.href !== oldHref) {
-                expect(myApp.$router === router).toBeTruthy();
-                expect(location.href.indexOf(document.querySelector('.content').textContent) >= 0).toBeTruthy();
-                router.locator.redirect('/test/');
-
-                setTimeout(done, 200);
-
-                return;
-            }
-
-            setTimeout(doneDetect, 500);
-        };
-
-        setTimeout(doneDetect, 500);
-    });
 });
 
 describe('Synthesis', function () {
@@ -1046,246 +964,6 @@ describe('Component $router', function() {
         }, 222)
     });
 
-    it('withRoute: $router exists, route data exists', function (done) {
-        var myApp;
-        var childNode;
-        var route;
-        var child = withRoute(san.defineComponent({
-            template: '<div>child is here</div>',
-            inited: function () {
-                childNode = this;
-            },
-            attached() {
-                route = this.data.get('route');
-            }
-        }));
-        var App = san.defineComponent({
-            template: '<div>something for nothing.<child></child></div>',
-            inited: function () {
-                myApp = this;
-            },
-            components: {
-                'child': child
-            }
-        });
-
-        router.add({
-            rule: '/dr/1/1',
-            Component: App
-        });
-
-        location.hash = '/dr/1/1';
-        setTimeout(function () {
-            expect(myApp.$router).toBe(router);
-            expect(childNode.$router).toBe(router);
-            expect(route.path).toBe("/dr/1/1");
-            done();
-        }, 222)
-    });
-
-    it('withRoute: router.listen', function (done) {
-        var myApp;
-        var childNode;
-        var route;
-        var child3Ins;
-        var child4Ins;
-        var child = withRoute(san.defineComponent({
-            template: '<div>child is here</div>',
-            inited: function () {
-                childNode = this;
-            },
-            attached() {
-                route = this.data.get('route');
-            }
-        }));
-        var App = san.defineComponent({
-            template: `
-                <div>
-                    something for nothing.
-                    <child s-for="item in list" s-ref="ref{{item}}"></child>
-                </div>
-            `,
-            inited: function () {
-                myApp = this;
-            },
-            initData: function () {
-                return {
-                    list: [1, 2, 3, 4]
-                }
-            },
-            attached() {
-                this.ref('ref1').dispose();
-                this.ref('ref2').dispose();
-                child3Ins = this.ref('ref3');
-                child4Ins = this.ref('ref4');
-            },
-            components: {
-                'child': child
-            }
-        });
-
-        router.add({
-            rule: '/dr/1/10',
-            Component: App
-        });
-
-        location.hash = '/dr/1/10';
-        setTimeout(function () {
-            expect(myApp.$router).toBe(router);
-            expect(childNode.$router).toBe(router);
-            expect(route.path).toBe("/dr/1/10");
-
-            expect(router.listeners.length === 2).toBeTruthy();
-            expect(typeof child3Ins['$unlistenHandlerForSanRouter'] === 'function').toBeTruthy();
-            child3Ins.dispose();
-            expect(child3Ins['$unlistenHandlerForSanRouter'] === null).toBeTruthy();
-            expect(router.listeners.length === 1).toBeTruthy();
-
-            expect(typeof child4Ins['$unlistenHandlerForSanRouter'] === 'function').toBeTruthy();
-            child4Ins.dispose();
-            expect(child4Ins['$unlistenHandlerForSanRouter'] === null).toBeTruthy();
-            expect(router.listeners.length === 0).toBeTruthy();
-
-            done();
-        }, 222)
-    });
-
-    it('withRoute: route data is updated', function (done) {
-        var myApp;
-        var childNode;
-        var route;
-        var child = withRoute(san.defineComponent({
-            template: '<div>child is here</div>',
-            inited: function () {
-                childNode = this;
-            },
-            attached() {
-                route = this.data.get('route');
-            }
-        }));
-        var App1 = san.defineComponent({
-            template: '<div>something for nothing.<child></child></div>',
-            inited: function () {
-                myApp = this;
-            },
-            components: {
-                'child': child
-            }
-        });
-
-        var App2 = san.defineComponent({
-            template: '<div>something for nothing.</div>'
-        });
-
-        router.add([
-            {
-                rule: '/dr/1/2',
-                Component: App1
-            },
-            {
-                rule: '/dr/1/3',
-                Component: App2
-            }
-        ]);
-
-        location.hash = '/dr/1/2';
-        location.hash = '/dr/1/3';
-        location.hash = '/dr/1/2';
-        setTimeout(function () {
-            expect(myApp.$router).toBe(router);
-            expect(childNode.$router).toBe(router);
-            expect(route.path).toBe("/dr/1/2");
-            done();
-        }, 222)
-    });
-
-    it('withRoute: class and function', function (done) {
-        var myApp1;
-        var myApp2;
-        var childNode1;
-        var childNode2;
-        var childNode3;
-        var route1;
-        var route2;
-        var route3;
-        var child1 = withRoute(san.defineComponent({
-            template: '<div>child1 is here</div>',
-            inited: function () {
-                childNode1 = this;
-            },
-            attached() {
-                route1 = this.data.get('route');
-            }
-        }));
-        class Child2 extends san.Component {
-            static template = '<div>child2 is here</div>';
-            inited() {
-                childNode2 = this;
-            }
-            attached() {
-                route2 = this.data.get('route');
-            }
-        }
-        var child2 = withRoute(Child2);
-        var App1 = san.defineComponent({
-            template: '<div>something for nothing.<child1></child1><child2></child2></div>',
-            inited: function () {
-                myApp1 = this;
-            },
-            components: {
-                'child1': child1,
-                'child2': child2
-            }
-        });
-
-        class Child3 extends san.Component {
-            static template = '<div>child2 is here</div>';
-            inited() {
-                childNode3 = this;
-            }
-            attached() {
-                route3 = this.data.get('route');
-            }
-        }
-        var child3 = withRoute(Child3);
-        var App2 = san.defineComponent({
-            template: '<div>something for nothing.<child3></child3></div>',
-            inited: function () {
-                myApp2 = this;
-            },
-            components: {
-                'child3': child3
-            }
-        });
-
-        router.add([
-            {
-                rule: '/dr/1/4',
-                Component: App1
-            },
-            {
-                rule: '/dr/1/5',
-                Component: App2
-            }
-        ]);
-
-        location.hash = '/dr/1/4';
-        setTimeout(function () {
-            expect(myApp1.$router).toBe(router);
-            expect(childNode1.$router).toBe(router);
-            expect(childNode2.$router).toBe(router);
-            expect(route1.path).toBe("/dr/1/4");
-            expect(route2.path).toBe("/dr/1/4");
-
-            location.hash = '/dr/1/5';
-            setTimeout(function () {
-                expect(myApp2.$router).toBe(router);
-                expect(childNode3.$router).toBe(router);
-                expect(route3.path).toBe("/dr/1/5");
-                done();
-            }, 222);
-        }, 222)
-    });
 
     it('use push', function (done) {
         var myApp;
@@ -1668,6 +1346,299 @@ describe('Component $router', function() {
                 setTimeout(done, 200);
             }, 222)
         }, 222)
+    });
+});
+
+describe('withRouter Component', function() {
+    beforeAll(function (done) {
+        router.setMode('hash');
+        location.hash = nextURL();
+
+        setTimeout(function () {done();}, 50)
+    });
+
+    afterEach(function (done) {
+        location.hash = nextURL();
+
+        setTimeout(function () {done();}, 200)
+    });
+
+    it('$router exists, route data exists', function (done) {
+        var myApp;
+        var child;
+        var routeData;
+        var routeCalled = false;
+        var Child = withRoute(san.defineComponent({
+            template: '<div>child is here</div>',
+            inited: function () {
+                child = this;
+            },
+
+            attached() {
+                routeData = this.data.get('route');
+            },
+            
+            route() {
+                routeCalled = true;
+            }
+        }));
+
+        var App = san.defineComponent({
+            template: '<div>something for nothing.<x-child/></div>',
+            inited: function () {
+                myApp = this;
+            },
+
+            components: {
+                'x-child': Child
+            }
+        });
+
+        router.add({
+            rule: '/wr/1/:num',
+            Component: App
+        });
+
+        location.hash = '/wr/1/1';
+        setTimeout(function () {
+            expect(myApp.$router).toBe(router);
+            expect(child.$router).toBe(router);
+            expect(routeData.path).toBe("/wr/1/1");
+            expect(routeData.params.num).toBe("1");
+            expect(routeData.resume).toBeUndefined();
+            expect(routeCalled).toBeTruthy();
+            done();
+        }, 222)
+    });
+
+    it('route data is updated', function (done) {
+        var myApp;
+        var child;
+        var routeData;
+        var Child = withRoute(san.defineComponent({
+            template: '<div>child is here</div>',
+            inited: function () {
+                child = this;
+            },
+
+            route() {
+                routeData = this.data.get('route');
+            }
+        }));
+        var App1 = san.defineComponent({
+            template: '<div>something for nothing.<x-child/></div>',
+            inited: function () {
+                myApp = this;
+            },
+
+            components: {
+                'x-child': Child
+            }
+        });
+
+        router.add([
+            {
+                rule: '/wr/2/:num',
+                Component: App1
+            }
+        ]);
+
+        location.hash = '/wr/2/1';
+        setTimeout(function () {
+            expect(myApp.$router).toBe(router);
+            expect(child.$router).toBe(router);
+            expect(routeData.path).toBe('/wr/2/1');
+            expect(routeData.query.num).toBe("1");
+            expect(routeData.resume).toBeUndefined();
+
+
+            location.hash = '/wr/2/2';
+            setTimeout(function () {
+                expect(routeData.path).toBe('/wr/2/2');
+                expect(routeData.query.num).toBe("2");
+                expect(routeData.resume).toBeUndefined();
+
+                done();
+            }, 222);
+        }, 222)
+    });
+
+    it('more than 1 instances', function (done) {
+        var myApp;
+        var childLen = 0;
+        var routeInvokes = 0;
+        var num = '1';
+        var path = '/wr/3/1';
+        var Child = withRoute(san.defineComponent({
+            template: '<div>child is here</div>',
+            attach() {
+                childLen++;
+            },
+
+            route() {
+                expect(this.data.get('route.params.num')).toBe(num);
+                expect(this.data.get('route.path')).toBe(path);
+                routeInvokes++;
+            }
+        }));
+        var App = san.defineComponent({
+            template: '<div>something for nothing.<x-child s-for="item in list"/></div>',
+
+            inited: function () {
+                myApp = this;
+            },
+            initData: function () {
+                return {
+                    list: [1, 2, 3, 4]
+                };
+            },
+            components: {
+                'x-child': Child
+            }
+        });
+
+        router.add({
+            rule: '/wr/3/:num',
+            Component: App
+        });
+
+        location.hash = '/wr/3/1';
+        setTimeout(function () {
+            expect(childLen).toBe(4);
+            expect(routeInvokes).toBe(4);
+
+            num = '2';
+            path = '/wr/3/2';
+            location.hash = '/wr/3/2';
+            setTimeout(function () {
+                expect(routeInvokes).toBe(8);
+
+                done();
+            }, 222);
+        }, 222)
+    });
+
+    it('for class', function (done) {
+        var attached = 0;
+        var routed = 0;
+
+        class Child extends san.Component {
+            static template = '<u>{{route.params.num}}</u>';
+            attached() {
+                attached++;
+            }
+            
+            route() {
+                routed++;
+            }
+        }
+        var ChildWithRoute = withRoute(Child);
+        var App = san.defineComponent({
+            template: '<div><x-child/></div>',
+
+            components: {
+                'x-child': ChildWithRoute
+            }
+        });
+
+        router.add([
+            {
+                rule: '/wr/4/:num',
+                Component: App
+            }
+        ]);
+
+        location.hash = '/wr/4/1';
+        setTimeout(function () {
+            expect(attached).toBe(1);
+            expect(routed).toBe(1);
+            expect(document.getElementById('main').getElementsByTagName('u')[0].innerHTML)
+                .toContain('1');
+
+            location.hash = '/wr/4/2';
+            setTimeout(function () {
+                expect(attached).toBe(1);
+                expect(routed).toBe(2);
+
+                expect(document.getElementById('main').getElementsByTagName('u')[0].innerHTML)
+                    .toContain('2');
+
+                done();
+            }, 222);
+        }, 222);
+    });
+
+    it('inner partial update', function (done) {
+
+        var attached = 0;
+        var routed = 0;
+
+        var Home = san.defineComponent({
+            template: '<b class="content">home</b>'
+        });
+        var About = san.defineComponent({
+            template: '<b class="content">about</b>'
+        });
+        var Content = withRoute(san.defineComponent({
+            template: '<div class="abc" style="width:100px;height:100px;background-color:green">'
+                + '<child s-is="route.query.name"/>'
+                + '</div>',
+
+            components: {
+                'home': Home,
+                'about': About
+            },
+            
+            attached() {
+                attached++;
+            },
+            
+            route() {
+                routed++;
+            }
+        }));
+        var App = san.defineComponent({
+            template: `
+                <div>
+                    <h3>{{route.query.name}}</h3>
+                    <x-content />
+                </div>
+            `,
+            components: {
+                'x-content': Content
+            }
+        });
+
+        router.add([
+            {
+                rule: '/wr/5/:name',
+                Component: App
+            }
+        ]);
+        location.hash = '/wr/5/none';
+
+        setTimeout(function () {
+            expect(attached).toBe(1);
+            expect(routed).toBe(1);
+            expect(document.getElementById('main').getElementsByTagName('h3')[0].innerHTML)
+                .toContain('none');
+            expect(document.getElementById('main').getElementsByTagName('b').length).toBe(0);
+
+            location.hash = '/wr/5/home';
+            setTimeout(function () {
+                expect(attached).toBe(1);
+                expect(routed).toBe(2);
+                
+                expect(document.getElementById('main').getElementsByTagName('h3')[0].innerHTML)
+                    .toContain('home');
+                expect(document.getElementById('main').getElementsByTagName('b').length).toBe(1);
+                
+                expect(document.getElementById('main').getElementsByTagName('b')[0].innerHTML)
+                    .toContain('home');   
+
+                done();
+            }, 222);
+        }, 222);
     });
 });
 
