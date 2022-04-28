@@ -592,9 +592,9 @@ describe('Router', function () {
             }
         };
 
-        function listener(e, c) {
+        function listener(e) {
             expect(e.query.num).toBe('1');
-            expect(c).toBe(config);
+            expect(e.config).toBe(config);
         }
         router.add(config);
         router.listen(listener);
