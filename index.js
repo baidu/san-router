@@ -720,14 +720,28 @@
             var routeAlive = this.routeAlives[len];
 
             if (routeAlive.id === routeItem.id) {
-                routeAlive.component.data.set('route', e);
-                if (typeof routeAlive.component.route === 'function') {
-                    routeAlive.component.route();
+                if (routeAlive.component.data) {
+                    routeAlive.component.data.set('route', e);
+                    if (typeof routeAlive.component.route === 'function') {
+                        routeAlive.component.route();
+                    }
+                } else {
+                    routeAlive.component.then(
+                        function(component) {
+                            component.data.set('route', e);
+                            if (typeof component.route === 'function') {
+                                component.route();
+                            }
+                        }
+                    )
                 }
                 isUpdateAlive = true;
             }
             else {
-                routeAlive.component.dispose();
+                routeAlive.component.dispose ? routeAlive.component.dispose()
+                    : routeAlive.component.then(function(component) {
+                        component.dispose();
+                    });
                 this.routeAlives.splice(len, 1);
             }
         }
@@ -738,21 +752,27 @@
 
         if (routeItem.Component) {
             if (isComponent(routeItem.Component)) {
-                this.attachCmpt(routeItem, e);
+                this.routeAlives.push({
+                    id: routeItem.id,
+                    component: this.attachCmpt(routeItem, e)
+                });
             }
             else {
                 var me = this;
-                routeItem.Component().then(
-                    function (Cmpt) { // eslint-disable-line
-                        if (isComponent(Cmpt)) {
-                            routeItem.Component = Cmpt;
+                this.routeAlives.push({
+                    id: routeItem.id,
+                    component: routeItem.Component().then(
+                        function (Cmpt) { // eslint-disable-line
+                            if (isComponent(Cmpt)) {
+                                routeItem.Component = Cmpt;
+                            }
+                            else if (Cmpt.__esModule && isComponent(Cmpt['default'])) {
+                                routeItem.Component = Cmpt['default'];
+                            }
+                            return me.attachCmpt(routeItem, e);
                         }
-                        else if (Cmpt.__esModule && isComponent(Cmpt['default'])) {
-                            routeItem.Component = Cmpt['default'];
-                        }
-                        me.attachCmpt(routeItem, e);
-                    }
-                );
+                    )
+                });
             }
         }
         else {
@@ -782,17 +802,14 @@
 
         component.attach(targetEl);
 
-        this.routeAlives.push({
-            component: component,
-            id: routeItem.id
-        });
-
         // component handler 同时存在
         if (typeof routeItem.handler === 'function') {
             setTimeout(function () {
                 routeItem.handler.call(me, e);
             })
         }
+
+        return component;
     };
 
     /**
