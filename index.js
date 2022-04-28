@@ -939,13 +939,15 @@
     }
 
     /**
-     * 为特定组件注入 $router 与 data route
+     * 为组件生成支持路由关联的高阶组件
      *
-     * @param {*} ComponentClass 需要注入 data route 以及 proto.$router 的 san 组件
-     * @param {*} customRouter 自定义的 router
+     * @param {Function|Class} ComponentClass 组件类
+     * @param {Router?} customRouter 关联的 router 实例
      * @returns 高阶组件
      */
     function withRoute(ComponentClass, customRouter) {
+        customRouter = customRouter || router;
+
         var componentProto;
         var ReturnTarget;
         var extProto;
@@ -961,18 +963,16 @@
             extProto = ReturnTarget;
         }
 
-        var injectedRouter = customRouter || router;
-
         // 注入 $router 以及 data route
         var inited = componentProto.inited;
         extProto.inited = function () {
-            this.$router = injectedRouter;
+            this.$router = customRouter;
 
             this.data.set(
                 'route', 
-                injectedRouter.match(
-                    injectedRouter.locator.current,
-                    injectedRouter.locator.referrer
+                customRouter.match(
+                    customRouter.locator.current,
+                    customRouter.locator.referrer
                 ).data
             );
             if (typeof this.route === 'function') {
@@ -986,8 +986,8 @@
                 if (typeof me.route === 'function') {
                     me.route();
                 }
-            }
-            injectedRouter.listenWithRoute(this.__routerListener);
+            };
+            customRouter.listenWithRoute(this.__routerListener);
 
             if (typeof inited === 'function') {
                 inited.call(this);
