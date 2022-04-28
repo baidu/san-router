@@ -469,9 +469,9 @@
      */
     function getLocatorRedirectHandler(router) {
         return function (e) {
-            var matchedRoute = router.getMatchedRoute(e);
-            var url = matchedRoute.url;
-            var routeItem = matchedRoute.routeItem;
+            var url = parseURL(e.url);
+            var routeInfo = router.match(url, e.referrer);
+            var listenerSource = routeInfo ? routeInfo.data : url;
 
             var i = 0;
             var state = 1;
@@ -483,13 +483,13 @@
              */
             var listenerEvent = {
                 url: e.url,
-                hash: url.hash,
-                queryString: url.queryString,
-                query: url.query,
-                params: url.params,
-                path: url.path,
-                referrer: url.referrer,
-                config: url.config,
+                hash: listenerSource.hash,
+                queryString: listenerSource.queryString,
+                query: listenerSource.query,
+                params: listenerSource.params,
+                path: listenerSource.path,
+                referrer: e.referrer,
+                config: routeInfo ? routeInfo.data.config : null,
                 resume: next,
                 suspend: function () {
                     state = 0;
@@ -507,7 +507,7 @@
             function doNext() {
                 if (state > 0) {
                     if (i < router.listeners.length) {
-                        router.listeners[i].call(router, listenerEvent, url.config);
+                        router.listeners[i].call(router, listenerEvent);
                         if (state > 0) {
                             next();
                         }
@@ -535,8 +535,8 @@
              * @inner
              */
             function routeAction() {
-                if (routeItem) {
-                    router.doRoute(routeItem, url);
+                if (routeInfo) {
+                    router.doRoute(routeInfo);
                 }
                 else {
                     var len = router.routeAlives.length;
@@ -574,23 +574,22 @@
     }
 
     /**
-     * 获取 url 匹配到的 route 信息
+     * 匹配 url
+     * 该方法对
      *
-     * @param {Object} san-router 实例
-     * @param {*} e url 信息
-     * @returns
+     * @param {Object|string} url 要匹配的url
+     * @return {Object} routeInfo
      */
-    Router.prototype.getMatchedRoute = function (e) {
-        var url = parseURL(e.url);
-        var routeItem;
+    Router.prototype.match = function (url, referrer) {
+        if (typeof url === 'string') {
+            url = parseURL(url);
+        }
 
         for (var i = 0; i < this.routes.length; i++) {
             var item = this.routes[i];
             var match = item.rule.exec(url.path);
 
             if (match) {
-                routeItem = item;
-
                 // fill params
                 var keys = item.keys || [];
                 for (var j = 1; j < match.length; j++) {
@@ -600,18 +599,23 @@
                     url.params[key] = value;
                 }
 
-                // fill referrer
-                url.referrer = e.referrer;
-                url.config = item.config;
-
-                break;
+                return {
+                    data: {
+                        hash: url.hash,
+                        queryString: url.queryString,
+                        params: url.params,
+                        query: url.query,
+                        path: url.path,
+                        referrer: referrer,
+                        config: item.config
+                    },
+                    url: url,
+                    route: item
+                };
             }
         }
 
-        return {
-            url: url,
-            routeItem: routeItem
-        };
+        return null;
     }
 
     /**
@@ -709,10 +713,10 @@
      * 执行路由
      *
      * @private
-     * @param {Object} routeItem 路由项
-     * @param {Object} e 路由信息
+     * @param {Object} routeInfo 路由信息
      */
-    Router.prototype.doRoute = function (routeItem, e) {
+    Router.prototype.doRoute = function (routeInfo) {
+        var routeItem = routeInfo.route;
         var isUpdateAlive = false;
         var len = this.routeAlives.length;
 
@@ -720,7 +724,7 @@
             var routeAlive = this.routeAlives[len];
 
             if (routeAlive.id === routeItem.id) {
-                routeAlive.component.data.set('route', e);
+                routeAlive.component.data.set('route', routeInfo.data);
                 if (typeof routeAlive.component.route === 'function') {
                     routeAlive.component.route();
                 }
@@ -738,7 +742,7 @@
 
         if (routeItem.Component) {
             if (isComponent(routeItem.Component)) {
-                this.attachCmpt(routeItem, e);
+                this.attachCmpt(routeInfo);
             }
             else {
                 var me = this;
@@ -750,25 +754,25 @@
                         else if (Cmpt.__esModule && isComponent(Cmpt['default'])) {
                             routeItem.Component = Cmpt['default'];
                         }
-                        me.attachCmpt(routeItem, e);
+                        me.attachCmpt(routeInfo);
                     }
                 );
             }
         }
         else {
-            routeItem.handler.call(this, e);
+            routeItem.handler.call(this, routeInfo.data);
         }
     };
 
-    Router.prototype.attachCmpt = function (routeItem, e) {
+    Router.prototype.attachCmpt = function (routeInfo) {
         var me = this;
+        var routeItem = routeInfo.route;
         var component = new routeItem.Component();
         component['$router'] = this;
-        component.data.set('route', e);
+        component.data.set('route', routeInfo.data);
         if (typeof component.route === 'function') {
             component.route();
         }
-
 
         var target = routeItem.target;
         var targetEl = elementSelector(target);
@@ -790,8 +794,8 @@
         // component handler 同时存在
         if (typeof routeItem.handler === 'function') {
             setTimeout(function () {
-                routeItem.handler.call(me, e);
-            })
+                routeItem.handler.call(me, routeInfo.data);
+            });
         }
     };
 
@@ -951,13 +955,11 @@
             if (!(this['$router'] instanceof Router)) {
                 this['$router'] = injectedRouter;
                 // 路由信息初始值
-                var e = injectedRouter.getMatchedRoute(
-                    {
-                        url: injectedRouter.locator.current,
-                        referrer: injectedRouter.locator.referrer
-                    }
-                ).url;
-                this.data.set('route', e);
+                var e = injectedRouter.match(
+                    injectedRouter.locator.current,
+                    injectedRouter.locator.referrer
+                );
+                this.data.set('route', e.data);
                 // 路由信息实时获取
                 var that = this;
                 this['$unlistenHandlerForSanRouter'] = injectedRouter.listen(function (e) {
