@@ -489,7 +489,7 @@
                 params: listenerSource.params,
                 path: listenerSource.path,
                 referrer: e.referrer,
-                config: routeInfo ? routeInfo.data.config : null,
+                config: routeInfo && routeInfo.route.config,
                 data: routeInfo && routeInfo.data,
                 resume: next,
                 suspend: function () {
@@ -549,8 +549,6 @@
             };
 
             doNext();
-
-
         };
     }
 
@@ -608,8 +606,7 @@
                         params: url.params,
                         query: url.query,
                         path: url.path,
-                        referrer: referrer,
-                        config: item.config
+                        referrer: referrer
                     },
                     url: url,
                     route: item

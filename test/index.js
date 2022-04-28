@@ -993,6 +993,7 @@ describe('Component $router', function() {
         setTimeout(function () {
             var ps = document.getElementById('main').getElementsByTagName('p');
             expect(ps[0].title).toBe('router');
+            expect(myApp.data.get('route.config')).toBeUndefined();
 
             myApp.$router.push('/dr/2/erik');
             setTimeout(function () {
@@ -1403,6 +1404,8 @@ describe('withRouter Component', function() {
         setTimeout(function () {
             expect(myApp.$router).toBe(router);
             expect(child.$router).toBe(router);
+
+            expect(myApp.data.get('route.config')).toBeUndefined();
             expect(routeData.path).toBe("/wr/1/1");
             expect(routeData.params.num).toBe("1");
             expect(routeData.resume).toBeUndefined();
