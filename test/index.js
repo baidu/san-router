@@ -904,7 +904,7 @@ describe('Synthesis', function () {
             expect(routeTimes).toBe(1);
             expect(document.getElementById('main').getElementsByTagName('b')[0].title).toBe('erik');
             detectDone();
-        }, 500);
+        }, 222);
 
 
         function detectDone() {
