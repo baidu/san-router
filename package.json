@@ -21,7 +21,6 @@
     "types/*.json"
   ],
   "types": "types",
-  "dependencies": {},
   "author": "otakustay",
   "repository": {
     "type": "git",
