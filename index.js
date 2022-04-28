@@ -451,8 +451,6 @@
     HTML5Locator.isSupport = 'pushState' in window.history;
 
 
-
-
     var routeID = 0x5942b;
     function guid() {
         return (++routeID).toString();
@@ -462,12 +460,242 @@
         return C.prototype && (C.prototype.nodeType === 5 || C.prototype._type === 'san-cmpt');
     }
 
+
+    /**
+     * 路由器类
+     *
+     * @class
+     * @param {Object?} options 初始化参数
+     * @param {string?} options.mode 路由模式，hash | html5
+     */
+    function Router(options) {
+        options = options || {};
+        var mode = options.mode || 'hash';
+
+        this.routes = [];
+        this.routeAlives = [];
+        this.listeners = [];
+
+        this.__withRouteListeners = [];
+        this.__redirectListener = routerGetRedirectListener(this);
+
+        this.setMode(mode);
+    }
+
+    /**
+     * 匹配 url
+     *
+     * @param {Object|string} url 要匹配的url
+     * @return {Object} routeInfo
+     */
+    Router.prototype.match = function (url, referrer) {
+        if (typeof url === 'string') {
+            url = parseURL(url);
+        }
+
+        for (var i = 0; i < this.routes.length; i++) {
+            var item = this.routes[i];
+            var match = item.rule.exec(url.path);
+
+            if (match) {
+                // fill params
+                var keys = item.keys || [];
+                for (var j = 1; j < match.length; j++) {
+                    var key = keys[j] || j;
+                    var value = match[j];
+                    url.query[key] = value;
+                    url.params[key] = value;
+                }
+
+                return {
+                    data: {
+                        hash: url.hash,
+                        queryString: url.queryString,
+                        params: url.params,
+                        query: url.query,
+                        path: url.path,
+                        referrer: referrer
+                    },
+                    url: url,
+                    route: item
+                };
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * 添加路由监听器
+     *
+     * @param {function(e, config)} listener 监听器
+     */
+    Router.prototype.listen = function (listener) {
+        this.listeners.push(listener);
+    };
+
+    /**
+     * 移除路由监听器
+     *
+     * @param {Function} listener 监听器
+     */
+    Router.prototype.unlisten = function (listener) {
+        var len = this.listeners.length;
+        while (len--) {
+            if (this.listeners[len] === listener) {
+                this.listeners.splice(len, 1);
+            }
+        }
+    };
+
+    /**
+     * 启动路由功能
+     *
+     * @return {Object} san-router 实例
+     */
+    Router.prototype.start = function () {
+        if (!this.isStarted) {
+            this.isStarted = true;
+            this.locator.on('redirect', this.__redirectListener);
+            this.locator.start();
+            this.locator.reload();
+        }
+
+        return this;
+    };
+
+    /**
+     * 停止路由功能
+     *
+     * @return {Object} san-router 实例
+     */
+    Router.prototype.stop = function () {
+        this.locator.un('redirect', this.__redirectListener);
+        this.locator.stop();
+        this.isStarted = false;
+
+        return this;
+    };
+
+    /**
+     * 设置路由模式
+     *
+     * @param {string} mode 路由模式，hash | html5
+     * @return {Object} san-router 实例
+     */
+    Router.prototype.setMode = function (mode) {
+        mode = mode.toLowerCase();
+        if (this.mode === mode) {
+            return;
+        }
+
+        this.mode = mode;
+
+        var restart = false;
+        if (this.isStarted) {
+            this.stop();
+            restart = true;
+        }
+
+        switch (mode) {
+            case 'hash':
+                this.locator = new HashLocator();
+                break;
+            case 'html5':
+                this.locator = new HTML5Locator();
+        }
+
+        if (restart) {
+            this.start();
+        }
+
+        return this;
+    };
+
+    /**
+     * 添加路由项，支持单一数据或者数组配置
+     *
+     * @public
+     * @param {Object|Array<Object>} config 路由项配置
+     * @return {Object} san-router 实例
+     */
+     Router.prototype.add = function (config) {
+        if (config instanceof Array) {
+            for (var i = 0, l = config.length; i < l; i++) {
+                routerAdd(this, config[i]);
+            }
+        }
+        else if (typeof config === 'object') {
+            routerAdd(this, config);
+        }
+
+        return this;
+    };
+
+    /**
+     * 编程式路由函数，间接使用 redirect 重定向，避免直接使用内部对象locator
+     *
+     * @param {Object|string} url 路由地址
+     * @param {Object?} options 重定向的行为配置
+     * @param {boolean?} options.force 是否强制刷新
+     */
+    Router.prototype.push = function (url, options) {
+        url = stringifyURL(url);
+        if (url) {
+            this.locator.redirect(url, options);
+        }
+    };
+
+    /**
+     * 添加路由项
+     * 当规则匹配时，路由将优先将Component渲染到target中。如果没有包含Component，则执行handler函数
+     *
+     * @param {Object} config 路由项配置
+     * @param {string|RegExp} config.rule 路由规则
+     * @param {Function?} config.handler 路由函数
+     * @param {Function?} config.Component 路由组件
+     * @param {string} config.target 路由组件要渲染到的目标位置
+     */
+    function routerAdd(router, config) {
+        var rule = config.rule;
+        var keys = [''];
+
+        if (typeof rule === 'string') {
+            // 没用path-to-regexp，暂时不提供这么多功能支持
+            var regText = rule.replace(
+                /\/:([a-z0-9_-]+)(?=\/|$)/ig,
+                function (match, key) {
+                    keys.push(key);
+                    return '/([^/\\s]+)';
+                }
+            );
+
+            rule = new RegExp('^' + regText + '$', 'i');
+        }
+
+        if (!(rule instanceof RegExp)) {
+            throw new Error('[SAN-ROUTER ERROR] Rule must be string or RegExp!');
+        }
+
+        var id = guid();
+        router.routes.push({
+            id: id,
+            rule: rule,
+            handler: config.handler,
+            keys: keys,
+            target: config.target || '#main',
+            Component: config.Component,
+            config: config
+        });
+    }
+
     /**
      * 获取 router 的 locator redirect 事件监听函数
      *
+     * @param {Router} router router 实例
      * @return {Function}
      */
-    function getLocatorRedirectHandler(router) {
+    function routerGetRedirectListener(router) {
         return function (e) {
             var url = parseURL(e.url);
             var routeInfo = router.match(url, e.referrer);
@@ -537,7 +765,7 @@
              */
             function routeAction() {
                 if (routeInfo) {
-                    router.doRoute(routeInfo);
+                    routerDoRoute(router, routeInfo);
                 }
                 else {
                     var len = router.routeAlives.length;
@@ -553,184 +781,18 @@
     }
 
     /**
-     * 路由器类
-     *
-     * @class
-     * @param {Object?} options 初始化参数
-     * @param {string?} options.mode 路由模式，hash | html5
-     */
-    function Router(options) {
-        options = options || {};
-        var mode = options.mode || 'hash';
-
-        this.routes = [];
-        this.routeAlives = [];
-        this.listeners = [];
-        this.withRouteListeners = [];
-
-
-        this.locatorRedirectHandler = getLocatorRedirectHandler(this);
-        this.setMode(mode);
-    }
-
-    /**
-     * 匹配 url
-     * 该方法对
-     *
-     * @param {Object|string} url 要匹配的url
-     * @return {Object} routeInfo
-     */
-    Router.prototype.match = function (url, referrer) {
-        if (typeof url === 'string') {
-            url = parseURL(url);
-        }
-
-        for (var i = 0; i < this.routes.length; i++) {
-            var item = this.routes[i];
-            var match = item.rule.exec(url.path);
-
-            if (match) {
-                // fill params
-                var keys = item.keys || [];
-                for (var j = 1; j < match.length; j++) {
-                    var key = keys[j] || j;
-                    var value = match[j];
-                    url.query[key] = value;
-                    url.params[key] = value;
-                }
-
-                return {
-                    data: {
-                        hash: url.hash,
-                        queryString: url.queryString,
-                        params: url.params,
-                        query: url.query,
-                        path: url.path,
-                        referrer: referrer
-                    },
-                    url: url,
-                    route: item
-                };
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * 添加路由监听器
-     *
-     * @param {function(e, config)} listener 监听器
-     */
-    Router.prototype.listen = function (listener) {
-        this.listeners.push(listener);
-    };
-
-    /**
-     * 移除路由监听器
-     *
-     * @param {Function} listener 监听器
-     */
-    Router.prototype.unlisten = function (listener) {
-        var len = this.listeners.length;
-        while (len--) {
-            if (this.listeners[len] === listener) {
-                this.listeners.splice(len, 1);
-            }
-        }
-    };
-
-    Router.prototype.listenWithRoute = function (listener) {
-        this.withRouteListeners.push(listener);
-    };
-
-    Router.prototype.unlistenWithRoute = function (listener) {
-        var len = this.withRouteListeners.length;
-        while (len--) {
-            if (this.withRouteListeners[len] === listener) {
-                this.withRouteListeners.splice(len, 1);
-            }
-        }
-    };
-
-    /**
-     * 启动路由功能
-     *
-     * @return {Object} san-router 实例
-     */
-    Router.prototype.start = function () {
-        if (!this.isStarted) {
-            this.isStarted = true;
-            this.locator.on('redirect', this.locatorRedirectHandler);
-            this.locator.start();
-            this.locator.reload();
-        }
-
-        return this;
-    };
-
-    /**
-     * 停止路由功能
-     *
-     * @return {Object} san-router 实例
-     */
-    Router.prototype.stop = function () {
-        this.locator.un('redirect', this.locatorRedirectHandler);
-        this.locator.stop();
-        this.isStarted = false;
-
-        return this;
-    };
-
-    /**
-     * 设置路由模式
-     *
-     * @param {string} mode 路由模式，hash | html5
-     * @return {Object} san-router 实例
-     */
-    Router.prototype.setMode = function (mode) {
-        mode = mode.toLowerCase();
-        if (this.mode === mode) {
-            return;
-        }
-
-        this.mode = mode;
-
-        var restart = false;
-        if (this.isStarted) {
-            this.stop();
-            restart = true;
-        }
-
-        switch (mode) {
-            case 'hash':
-                this.locator = new HashLocator();
-                break;
-            case 'html5':
-                this.locator = new HTML5Locator();
-        }
-
-        if (restart) {
-            this.start();
-        }
-
-        return this;
-    };
-
-    /**
      * 执行路由
      *
-     * @private
      * @param {Object} routeInfo 路由信息
      */
-    Router.prototype.doRoute = function (routeInfo) {
+    function routerDoRoute(router, routeInfo) {
         var routeItem = routeInfo.route;
         var isUpdateAlive = false;
-        var len = this.routeAlives.length;
-        var withRouteListeners = this.withRouteListeners.slice(0);
+        var len = router.routeAlives.length;
+        var withRouteListeners = router.withRouteListeners.slice(0);
 
         while (len--) {
-            var routeAlive = this.routeAlives[len];
+            var routeAlive = router.routeAlives[len];
 
             if (routeAlive.id === routeItem.id) {
                 routeAlive.component.data.set('route', routeInfo.data);
@@ -741,17 +803,16 @@
             }
             else {
                 routeAlive.component.dispose();
-                this.routeAlives.splice(len, 1);
+                router.routeAlives.splice(len, 1);
             }
         }
 
         if (!isUpdateAlive) {
             if (routeItem.Component) {
                 if (isComponent(routeItem.Component)) {
-                    this.attachCmpt(routeInfo);
+                    routerAttachComponent(router, routeInfo);
                 }
                 else {
-                    var me = this;
                     routeItem.Component().then(
                         function (Cmpt) { // eslint-disable-line
                             if (isComponent(Cmpt)) {
@@ -760,26 +821,26 @@
                             else if (Cmpt.__esModule && isComponent(Cmpt['default'])) {
                                 routeItem.Component = Cmpt['default'];
                             }
-                            me.attachCmpt(routeInfo);
+                            routerAttachComponent(router, routeInfo);
                         }
                     );
                 }
             }
             else {
-                routeItem.handler.call(this, routeInfo.data);
+                routeItem.handler.call(router, routeInfo.data);
             }
         }
 
         for (var i = 0, l = withRouteListeners.length; i < l; i++) {
             withRouteListeners[i](routeInfo);
         }
-    };
+    }
 
-    Router.prototype.attachCmpt = function (routeInfo) {
-        var me = this;
+
+    function routerAttachComponent(router, routeInfo) {
         var routeItem = routeInfo.route;
         var component = new routeItem.Component();
-        component['$router'] = this;
+        component['$router'] = router;
         component.data.set('route', routeInfo.data);
         if (typeof component.route === 'function') {
             component.route();
@@ -797,7 +858,7 @@
 
         component.attach(targetEl);
 
-        this.routeAlives.push({
+        router.routeAlives.push({
             component: component,
             id: routeItem.id
         });
@@ -805,89 +866,11 @@
         // component handler 同时存在
         if (typeof routeItem.handler === 'function') {
             setTimeout(function () {
-                routeItem.handler.call(me, routeInfo.data);
+                routeItem.handler.call(router, routeInfo.data);
             });
         }
-    };
-
-    /**
-     * 添加路由项
-     * 当规则匹配时，路由将优先将Component渲染到target中。如果没有包含Component，则执行handler函数
-     *
-     * @private
-     * @param {Object} config 路由项配置
-     * @param {string|RegExp} config.rule 路由规则
-     * @param {Function?} config.handler 路由函数
-     * @param {Function?} config.Component 路由组件
-     * @param {string} config.target 路由组件要渲染到的目标位置
-     * @return {Object} san-router 实例
-     */
-    Router.prototype._add = function (config) {
-        var rule = config.rule;
-        var keys = [''];
-
-        if (typeof rule === 'string') {
-            // 没用path-to-regexp，暂时不提供这么多功能支持
-            var regText = rule.replace(
-                /\/:([a-z0-9_-]+)(?=\/|$)/ig,
-                function (match, key) {
-                    keys.push(key);
-                    return '/([^/\\s]+)';
-                }
-            );
-
-            rule = new RegExp('^' + regText + '$', 'i');
-        }
-
-        if (!(rule instanceof RegExp)) {
-            throw new Error('[SAN-ROUTER ERROR] Rule must be string or RegExp!');
-        }
-
-        var id = guid();
-        this.routes.push({
-            id: id,
-            rule: rule,
-            handler: config.handler,
-            keys: keys,
-            target: config.target || '#main',
-            Component: config.Component,
-            config: config
-        });
-
-        return this;
-    };
-
-    /**
-     * 添加路由项，支持单一数据或者数组配置
-     *
-     * @public
-     * @param {Object|Array<Object>} config 路由项配置
-     * @return {Object} san-router 实例
-     */
-    Router.prototype.add = function (config) {
-        if (Object.prototype.toString.call(config) === '[object Array]') {
-            for (var i = 0, l = config.length; i < l; i++) {
-                this._add(config[i]);
-            }
-            return this;
-        }
-
-        return this._add(config);
     }
 
-    /**
-     * 编程式路由函数，间接使用 redirect 重定向，避免直接使用内部对象locator
-     *
-     * @param {Object|string} url 路由地址
-     * @param {Object?} options 重定向的行为配置
-     * @param {boolean?} options.force 是否强制刷新
-     */
-    Router.prototype.push = function (url, options) {
-        url = stringifyURL(url);
-        if (url) {
-            this.locator.redirect(url, options);
-        }
-    }
 
     var router = new Router();
 
@@ -984,7 +967,7 @@
                     me.route();
                 }
             };
-            customRouter.listenWithRoute(this.__routerListener);
+            customRouter.__withRouteListeners.push(this.__routerListener);
 
             if (typeof inited === 'function') {
                 inited.call(this);
@@ -995,7 +978,16 @@
         var disposed = componentProto.disposed;
         extProto.disposed = function () {
             if (this.$router) {
-                this.$router.unlistenWithRoute(this.__routerListener);
+                // unlisten from router
+                var listeners = this.$router.__withRouteListeners;
+                var len = listeners.length;
+                while (len--) {
+                    if (listeners[len] === listener) {
+                        listeners.splice(len, 1);
+                        break;
+                    }
+                }
+
                 this.__routerListener = null;
                 this.$router = null;
             }
