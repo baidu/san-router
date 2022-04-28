@@ -1000,11 +1000,8 @@
         return ReturnTarget;
     }
 
-    var main = {
-        /**
-         * 路由链接的 San 组件
-         */
-        Link: {
+    function createLink(router) {
+        return {
             template: '<a href="{{hrefPrefix}}{{href}}" onclick="return false;" on-click="clicker($event)" '
                 + 'target="{{target}}" class="{{isActive ? activeClass : \'\'}}"><slot/></a>',
 
@@ -1051,8 +1048,12 @@
                     return resolveURL(url, router.locator.current);
                 }
             }
-        },
+        };
+    }
 
+    var main = {
+        Link: createLink(router),
+        createLink: createLink,
         withRoute: withRoute,
         router: router,
         Router: Router,
@@ -1077,6 +1078,5 @@
     else {
         root.sanRouter = main;
     }
-
 
 })(this);
