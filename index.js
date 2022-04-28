@@ -789,7 +789,7 @@
         var routeItem = routeInfo.route;
         var isUpdateAlive = false;
         var len = router.routeAlives.length;
-        var withRouteListeners = router.withRouteListeners.slice(0);
+        var withRouteListeners = router.__withRouteListeners.slice(0);
 
         while (len--) {
             var routeAlive = router.routeAlives[len];
@@ -982,7 +982,7 @@
                 var listeners = this.$router.__withRouteListeners;
                 var len = listeners.length;
                 while (len--) {
-                    if (listeners[len] === listener) {
+                    if (listeners[len] === this.__routerListener) {
                         listeners.splice(len, 1);
                         break;
                     }
