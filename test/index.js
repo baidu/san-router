@@ -1645,4 +1645,49 @@ describe('withRouter Component', function() {
     });
 });
 
+describe('Async Component', function() {
+    beforeAll(function (done) {
+        router.setMode('hash');
+        location.hash = nextURL();
 
+        setTimeout(function () {done();}, 50)
+    });
+
+    afterEach(function (done) {
+        location.hash = nextURL();
+
+        setTimeout(function () {done();}, 200)
+    });
+
+    it('Async Component attached once', function (done) {
+        var App = san.defineComponent({
+            template: '<div class="async-app">something for nothing.</div>'
+        });
+
+        router.add([
+            {
+                rule: '/ac/6',
+                Component: function() {
+                    return new Promise(function (resolve) {
+                        setTimeout(function () {
+                            resolve(App);
+                        }, 0);
+                    });
+                }
+            }
+        ]);
+
+        router.listen(e => {
+            e.suspend();
+            // doSomething()
+            e.resume();
+        });
+
+        location.hash = '/ac/6';
+    
+        setTimeout(function () {
+            expect(document.querySelectorAll('.async-app').length ).toBe(1);
+            done();
+        }, 100)
+    });
+});
