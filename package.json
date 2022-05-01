@@ -4,11 +4,11 @@
   "description": "Router for San",
   "scripts": {
     "pretest": "npm run build",
-    "test": "http-server -o /test",
+    "test": "http-server -c-1 -o /test",
     "build": "rm -rf dist && mkdir dist && uglifyjs index.js -mco dist/san-router.js"
   },
   "devDependencies": {
-    "http-server": "^0.12.3",
+    "http-server": "^14.1.0",
     "jasmine-core": "^2.99.1",
     "san": "^3.11.2",
     "uglify-js": "^2.7.5"

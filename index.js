@@ -770,7 +770,10 @@
                 else {
                     var len = router.routeAlives.length;
                     while (len--) {
-                        router.routeAlives[len].component.dispose();
+                        var component = router.routeAlives[len].component;
+                        component.dispose ? component.dispose() : component.then(function (component) {
+                            component.dispose();
+                        });
                         router.routeAlives.splice(len, 1);
                     }
                 }
