@@ -4,7 +4,7 @@
   "description": "Router for San",
   "scripts": {
     "pretest": "npm run build",
-    "test": "open http://127.0.0.1:8080/test/",
+    "test": "http-server -o /test",
     "build": "rm -rf dist && mkdir dist && uglifyjs index.js -mco dist/san-router.js"
   },
   "devDependencies": {
