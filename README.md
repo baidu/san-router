@@ -623,7 +623,7 @@ san.defineComponent({
 | url         | 当前 url，比如 /home | string   |
 | referrer    | 上一次 url           | string   |
 | hash        | 当前 hash            | string   |
-| params      | url 参数             | object   |
+| params      | url 经过路由匹配的参数 | object   |
 | query       | url 参数             | object   |
 | queryString | query 字符串形式     | string   |
 | config      | 配置信息             | object   |
@@ -640,7 +640,7 @@ san.defineComponent({
 | params      | url 参数             | object |
 | query       | url 参数             | object |
 | queryString | query 字符串形式     | string |
-| config      | 配置信息             | object |
+
 
 ## ChangeLogs
 

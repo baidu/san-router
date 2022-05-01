@@ -451,8 +451,6 @@
     HTML5Locator.isSupport = 'pushState' in window.history;
 
 
-
-
     var routeID = 0x5942b;
     function guid() {
         return (++routeID).toString();
@@ -462,96 +460,6 @@
         return C.prototype && (C.prototype.nodeType === 5 || C.prototype._type === 'san-cmpt');
     }
 
-    /**
-     * 获取 router 的 locator redirect 事件监听函数
-     *
-     * @return {Function}
-     */
-    function getLocatorRedirectHandler(router) {
-        return function (e) {
-            var matchedRoute = router.getMatchedRoute(e);
-            var url = matchedRoute.url;
-            var routeItem = matchedRoute.routeItem;
-
-            var i = 0;
-            var state = 1;
-
-            /**
-             * listener 事件对象
-             *
-             * @type {Object}
-             */
-            var listenerEvent = {
-                url: e.url,
-                hash: url.hash,
-                queryString: url.queryString,
-                query: url.query,
-                params: url.params,
-                path: url.path,
-                referrer: url.referrer,
-                config: url.config,
-                resume: next,
-                suspend: function () {
-                    state = 0;
-                },
-                stop: function () {
-                    state = -1;
-                }
-            };
-
-            /**
-             * 尝试运行下一个listener
-             *
-             * @inner
-             */
-            function doNext() {
-                if (state > 0) {
-                    if (i < router.listeners.length) {
-                        router.listeners[i].call(router, listenerEvent, url.config);
-                        if (state > 0) {
-                            next();
-                        }
-                    }
-                    else {
-                        routeAction();
-                    }
-                }
-            }
-
-            /**
-             * 运行下一个listener
-             *
-             * @inner
-             */
-            function next() {
-                state = 1;
-                i++;
-                doNext();
-            }
-
-            /**
-             * 运行路由行为
-             *
-             * @inner
-             */
-            function routeAction() {
-                if (routeItem) {
-                    router.doRoute(routeItem, url);
-                }
-                else {
-                    var len = router.routeAlives.length;
-                    while (len--) {
-                        router.routeAlives[len].component.dispose();
-                        router.routeAlives.splice(len, 1);
-                    }
-                }
-            };
-
-            doNext();
-
-
-        };
-    }
 
     /**
      * 路由器类
@@ -568,29 +476,28 @@
         this.routeAlives = [];
         this.listeners = [];
 
+        this.__withRouteListeners = [];
+        this.__redirectListener = routerGetRedirectListener(this);
 
-        this.locatorRedirectHandler = getLocatorRedirectHandler(this);
         this.setMode(mode);
     }
 
     /**
-     * 获取 url 匹配到的 route 信息
+     * 匹配 url
      *
-     * @param {Object} san-router 实例
-     * @param {*} e url 信息
-     * @returns
+     * @param {Object|string} url 要匹配的url
+     * @return {Object} routeInfo
      */
-    Router.prototype.getMatchedRoute = function (e) {
-        var url = parseURL(e.url);
-        var routeItem;
+    Router.prototype.match = function (url, referrer) {
+        if (typeof url === 'string') {
+            url = parseURL(url);
+        }
 
         for (var i = 0; i < this.routes.length; i++) {
             var item = this.routes[i];
             var match = item.rule.exec(url.path);
 
             if (match) {
-                routeItem = item;
-
                 // fill params
                 var keys = item.keys || [];
                 for (var j = 1; j < match.length; j++) {
@@ -600,18 +507,22 @@
                     url.params[key] = value;
                 }
 
-                // fill referrer
-                url.referrer = e.referrer;
-                url.config = item.config;
-
-                break;
+                return {
+                    data: {
+                        hash: url.hash,
+                        queryString: url.queryString,
+                        params: url.params,
+                        query: url.query,
+                        path: url.path,
+                        referrer: referrer
+                    },
+                    url: url,
+                    route: item
+                };
             }
         }
 
-        return {
-            url: url,
-            routeItem: routeItem
-        };
+        return null;
     }
 
     /**
@@ -621,10 +532,6 @@
      */
     Router.prototype.listen = function (listener) {
         this.listeners.push(listener);
-        var that = this;
-        return function () {
-            that.unlisten(listener);
-        }
     };
 
     /**
@@ -649,7 +556,7 @@
     Router.prototype.start = function () {
         if (!this.isStarted) {
             this.isStarted = true;
-            this.locator.on('redirect', this.locatorRedirectHandler);
+            this.locator.on('redirect', this.__redirectListener);
             this.locator.start();
             this.locator.reload();
         }
@@ -663,7 +570,7 @@
      * @return {Object} san-router 实例
      */
     Router.prototype.stop = function () {
-        this.locator.un('redirect', this.locatorRedirectHandler);
+        this.locator.un('redirect', this.__redirectListener);
         this.locator.stop();
         this.isStarted = false;
 
@@ -706,125 +613,50 @@
     };
 
     /**
-     * 执行路由
+     * 添加路由项，支持单一数据或者数组配置
      *
-     * @private
-     * @param {Object} routeItem 路由项
-     * @param {Object} e 路由信息
+     * @public
+     * @param {Object|Array<Object>} config 路由项配置
+     * @return {Object} san-router 实例
      */
-    Router.prototype.doRoute = function (routeItem, e) {
-        var isUpdateAlive = false;
-        var len = this.routeAlives.length;
-
-        while (len--) {
-            var routeAlive = this.routeAlives[len];
-
-            if (routeAlive.id === routeItem.id) {
-                if (routeAlive.component.data) {
-                    routeAlive.component.data.set('route', e);
-                    if (typeof routeAlive.component.route === 'function') {
-                        routeAlive.component.route();
-                    }
-                } else {
-                    routeAlive.component.then(
-                        function(component) {
-                            component.data.set('route', e);
-                            if (typeof component.route === 'function') {
-                                component.route();
-                            }
-                        }
-                    )
-                }
-                isUpdateAlive = true;
-            }
-            else {
-                routeAlive.component.dispose ? routeAlive.component.dispose()
-                    : routeAlive.component.then(function(component) {
-                        component.dispose();
-                    });
-                this.routeAlives.splice(len, 1);
+     Router.prototype.add = function (config) {
+        if (config instanceof Array) {
+            for (var i = 0, l = config.length; i < l; i++) {
+                routerAdd(this, config[i]);
             }
         }
-
-        if (isUpdateAlive) {
-            return;
+        else if (typeof config === 'object') {
+            routerAdd(this, config);
         }
 
-        if (routeItem.Component) {
-            if (isComponent(routeItem.Component)) {
-                this.routeAlives.push({
-                    id: routeItem.id,
-                    component: this.attachCmpt(routeItem, e)
-                });
-            }
-            else {
-                var me = this;
-                this.routeAlives.push({
-                    id: routeItem.id,
-                    component: routeItem.Component().then(
-                        function (Cmpt) { // eslint-disable-line
-                            if (isComponent(Cmpt)) {
-                                routeItem.Component = Cmpt;
-                            }
-                            else if (Cmpt.__esModule && isComponent(Cmpt['default'])) {
-                                routeItem.Component = Cmpt['default'];
-                            }
-                            return me.attachCmpt(routeItem, e);
-                        }
-                    )
-                });
-            }
-        }
-        else {
-            routeItem.handler.call(this, e);
-        }
+        return this;
     };
 
-    Router.prototype.attachCmpt = function (routeItem, e) {
-        var me = this;
-        var component = new routeItem.Component();
-        component['$router'] = this;
-        component.data.set('route', e);
-        if (typeof component.route === 'function') {
-            component.route();
+    /**
+     * 编程式路由函数，间接使用 redirect 重定向，避免直接使用内部对象locator
+     *
+     * @param {Object|string} url 路由地址
+     * @param {Object?} options 重定向的行为配置
+     * @param {boolean?} options.force 是否强制刷新
+     */
+    Router.prototype.push = function (url, options) {
+        url = stringifyURL(url);
+        if (url) {
+            this.locator.redirect(url, options);
         }
-
-
-        var target = routeItem.target;
-        var targetEl = elementSelector(target);
-
-        if (!targetEl) {
-            throw new Error('[SAN-ROUTER ERROR] '
-                + 'Attach failed, target element "'
-                + routeItem.target + '" is not found.'
-            );
-        }
-
-        component.attach(targetEl);
-
-        // component handler 同时存在
-        if (typeof routeItem.handler === 'function') {
-            setTimeout(function () {
-                routeItem.handler.call(me, e);
-            })
-        }
-
-        return component;
     };
 
     /**
      * 添加路由项
      * 当规则匹配时，路由将优先将Component渲染到target中。如果没有包含Component，则执行handler函数
      *
-     * @private
      * @param {Object} config 路由项配置
      * @param {string|RegExp} config.rule 路由规则
      * @param {Function?} config.handler 路由函数
      * @param {Function?} config.Component 路由组件
      * @param {string} config.target 路由组件要渲染到的目标位置
-     * @return {Object} san-router 实例
      */
-    Router.prototype._add = function (config) {
+    function routerAdd(router, config) {
         var rule = config.rule;
         var keys = [''];
 
@@ -846,7 +678,7 @@
         }
 
         var id = guid();
-        this.routes.push({
+        router.routes.push({
             id: id,
             rule: rule,
             handler: config.handler,
@@ -855,41 +687,197 @@
             Component: config.Component,
             config: config
         });
-
-        return this;
-    };
+    }
 
     /**
-     * 添加路由项，支持单一数据或者数组配置
+     * 获取 router 的 locator redirect 事件监听函数
      *
-     * @public
-     * @param {Object|Array<Object>} config 路由项配置
-     * @return {Object} san-router 实例
+     * @param {Router} router router 实例
+     * @return {Function}
      */
-    Router.prototype.add = function (config) {
-        if (Object.prototype.toString.call(config) === '[object Array]') {
-            for (var i = 0, l = config.length; i < l; i++) {
-                this._add(config[i]);
+    function routerGetRedirectListener(router) {
+        return function (e) {
+            var url = parseURL(e.url);
+            var routeInfo = router.match(url, e.referrer);
+            var listenerSource = routeInfo ? routeInfo.data : url;
+
+            var i = 0;
+            var state = 1;
+
+            /**
+             * listener 事件对象
+             *
+             * @type {Object}
+             */
+            var listenerEvent = {
+                url: e.url,
+                hash: listenerSource.hash,
+                queryString: listenerSource.queryString,
+                query: listenerSource.query,
+                params: listenerSource.params,
+                path: listenerSource.path,
+                referrer: e.referrer,
+                config: routeInfo && routeInfo.route.config,
+                data: routeInfo && routeInfo.data,
+                resume: next,
+                suspend: function () {
+                    state = 0;
+                },
+                stop: function () {
+                    state = -1;
+                }
+            };
+
+            /**
+             * 尝试运行下一个listener
+             *
+             * @inner
+             */
+            function doNext() {
+                if (state > 0) {
+                    if (i < router.listeners.length) {
+                        router.listeners[i].call(router, listenerEvent);
+                        if (state > 0) {
+                            next();
+                        }
+                    }
+                    else {
+                        routeAction();
+                    }
+                }
             }
-            return this;
-        }
 
-        return this._add(config);
+            /**
+             * 运行下一个listener
+             *
+             * @inner
+             */
+            function next() {
+                state = 1;
+                i++;
+                doNext();
+            }
+
+            /**
+             * 运行路由行为
+             *
+             * @inner
+             */
+            function routeAction() {
+                if (routeInfo) {
+                    routerDoRoute(router, routeInfo);
+                }
+                else {
+                    var len = router.routeAlives.length;
+                    while (len--) {
+                        router.routeAlives[len].component.dispose();
+                        router.routeAlives.splice(len, 1);
+                    }
+                }
+            };
+
+            doNext();
+        };
     }
 
     /**
-     * 编程式路由函数，间接使用 redirect 重定向，避免直接使用内部对象locator
+     * 执行路由
      *
-     * @param {Object|string} url 路由地址
-     * @param {Object?} options 重定向的行为配置
-     * @param {boolean?} options.force 是否强制刷新
+     * @param {Object} routeInfo 路由信息
      */
-    Router.prototype.push = function (url, options) {
-        url = stringifyURL(url);
-        if (url) {
-            this.locator.redirect(url, options);
+    function routerDoRoute(router, routeInfo) {
+        var routeItem = routeInfo.route;
+        var isUpdateAlive = false;
+        var len = router.routeAlives.length;
+        var withRouteListeners = router.__withRouteListeners.slice(0);
+
+        while (len--) {
+            var routeAlive = router.routeAlives[len];
+
+            if (routeAlive.id === routeItem.id) {
+                // sync component
+                if (routeAlive.component.data) {
+                    routeAlive.component.data.set('route', routeInfo.data);
+                    if (typeof routeAlive.component.route === 'function') {
+                        routeAlive.component.route();
+                    }
+                } else {
+                    routeAlive.component.then(function(component) {
+                        component.data.set('route', routeInfo.data);
+                        if (typeof component.route === 'function') {
+                            component.route();
+                        }
+                    });
+                }
+                isUpdateAlive = true;
+            }
+            else {
+                routeAlive.component.dispose ? routeAlive.component.dispose()
+                    : routeAlive.component.then(function(component) {component.dispose();});
+                router.routeAlives.splice(len, 1);
+            }
+        }
+
+        if (!isUpdateAlive) {
+            if (routeItem.Component) {
+                router.routeAlives.push({
+                    id: routeItem.id,
+                    component: isComponent(routeItem.Component) ? routerAttachComponent(router, routeInfo)
+                        : routeItem.Component().then(
+                            function (Cmpt) { // eslint-disable-line
+                                if (isComponent(Cmpt)) {
+                                    routeItem.Component = Cmpt;
+                                }
+                                else if (Cmpt.__esModule && isComponent(Cmpt['default'])) {
+                                    routeItem.Component = Cmpt['default'];
+                                }
+                                return routerAttachComponent(router, routeInfo);
+                            }
+                        )
+                });
+            }
+            else {
+                routeItem.handler.call(router, routeInfo.data);
+            }
+        }
+
+        for (var i = 0, l = withRouteListeners.length; i < l; i++) {
+            withRouteListeners[i](routeInfo);
         }
     }
+
+
+    function routerAttachComponent(router, routeInfo) {
+        var routeItem = routeInfo.route;
+        var component = new routeItem.Component();
+        component['$router'] = router;
+        component.data.set('route', routeInfo.data);
+        if (typeof component.route === 'function') {
+            component.route();
+        }
+
+        var target = routeItem.target;
+        var targetEl = elementSelector(target);
+
+        if (!targetEl) {
+            throw new Error('[SAN-ROUTER ERROR] '
+                + 'Attach failed, target element "'
+                + routeItem.target + '" is not found.'
+            );
+        }
+
+        component.attach(targetEl);
+
+        // component handler 同时存在
+        if (typeof routeItem.handler === 'function') {
+            setTimeout(function () {
+                routeItem.handler.call(router, routeInfo.data);
+            });
+        }
+
+        return component;
+    }
+
 
     var router = new Router();
 
@@ -938,13 +926,15 @@
     }
 
     /**
-     * 为特定组件注入 $router 与 data route
+     * 为组件生成支持路由关联的高阶组件
      *
-     * @param {*} ComponentClass 需要注入 data route 以及 proto.$router 的 san 组件
-     * @param {*} customRouter 自定义的 router
+     * @param {Function|Class} ComponentClass 组件类
+     * @param {Router?} customRouter 关联的 router 实例
      * @returns 高阶组件
      */
-    function withRoute (ComponentClass, customRouter) {
+    function withRoute(ComponentClass, customRouter) {
+        customRouter = customRouter || router;
+
         var componentProto;
         var ReturnTarget;
         var extProto;
@@ -960,27 +950,31 @@
             extProto = ReturnTarget;
         }
 
-        var injectedRouter = customRouter || router;
-
         // 注入 $router 以及 data route
         var inited = componentProto.inited;
         extProto.inited = function () {
-            if (!(this['$router'] instanceof Router)) {
-                this['$router'] = injectedRouter;
-                // 路由信息初始值
-                var e = injectedRouter.getMatchedRoute(
-                    {
-                        url: injectedRouter.locator.current,
-                        referrer: injectedRouter.locator.referrer
-                    }
-                ).url;
-                this.data.set('route', e);
-                // 路由信息实时获取
-                var that = this;
-                this['$unlistenHandlerForSanRouter'] = injectedRouter.listen(function (e) {
-                    that && that.data.set('route', e);
-                });
+            this.$router = customRouter;
+
+            this.data.set(
+                'route', 
+                customRouter.match(
+                    customRouter.locator.current,
+                    customRouter.locator.referrer
+                ).data
+            );
+            if (typeof this.route === 'function') {
+                this.route();
             }
+
+            // 路由信息实时获取
+            var me = this;
+            this.__routerListener = function (e) {
+                me.data.set('route', e.data);
+                if (typeof me.route === 'function') {
+                    me.route();
+                }
+            };
+            customRouter.__withRouteListeners.push(this.__routerListener);
 
             if (typeof inited === 'function') {
                 inited.call(this);
@@ -990,12 +984,19 @@
         // dispose 监听器
         var disposed = componentProto.disposed;
         extProto.disposed = function () {
-            var unlisten = this['$unlistenHandlerForSanRouter'];
-            this['$unlistenHandlerForSanRouter'] = null;
+            if (this.$router) {
+                // unlisten from router
+                var listeners = this.$router.__withRouteListeners;
+                var len = listeners.length;
+                while (len--) {
+                    if (listeners[len] === this.__routerListener) {
+                        listeners.splice(len, 1);
+                        break;
+                    }
+                }
 
-            // disposer
-            if (typeof unlisten === 'function') {
-                unlisten();
+                this.__routerListener = null;
+                this.$router = null;
             }
 
             if (typeof disposed === 'function') {
@@ -1006,11 +1007,8 @@
         return ReturnTarget;
     }
 
-    var main = {
-        /**
-         * 路由链接的 San 组件
-         */
-        Link: {
+    function createLink(router) {
+        return {
             template: '<a href="{{hrefPrefix}}{{href}}" onclick="return false;" on-click="clicker($event)" '
                 + 'target="{{target}}" class="{{isActive ? activeClass : \'\'}}"><slot/></a>',
 
@@ -1057,8 +1055,12 @@
                     return resolveURL(url, router.locator.current);
                 }
             }
-        },
+        };
+    }
 
+    var main = {
+        Link: createLink(router),
+        createLink: createLink,
         withRoute: withRoute,
         router: router,
         Router: Router,
@@ -1083,6 +1085,5 @@
     else {
         root.sanRouter = main;
     }
-
 
 })(this);
