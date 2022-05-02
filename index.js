@@ -770,7 +770,10 @@
                 else {
                     var len = router.routeAlives.length;
                     while (len--) {
-                        router.routeAlives[len].component.dispose();
+                        var component = router.routeAlives[len].component;
+                        component.dispose ? component.dispose() : component.then(function (component) {
+                            component.dispose();
+                        });
                         router.routeAlives.splice(len, 1);
                     }
                 }
@@ -795,36 +798,46 @@
             var routeAlive = router.routeAlives[len];
 
             if (routeAlive.id === routeItem.id) {
-                routeAlive.component.data.set('route', routeInfo.data);
-                if (typeof routeAlive.component.route === 'function') {
-                    routeAlive.component.route();
+                // sync component
+                if (routeAlive.component.data) {
+                    routeAlive.component.data.set('route', routeInfo.data);
+                    if (typeof routeAlive.component.route === 'function') {
+                        routeAlive.component.route();
+                    }
+                } else {
+                    routeAlive.component.then(function(component) {
+                        component.data.set('route', routeInfo.data);
+                        if (typeof component.route === 'function') {
+                            component.route();
+                        }
+                    });
                 }
                 isUpdateAlive = true;
             }
             else {
-                routeAlive.component.dispose();
+                routeAlive.component.dispose ? routeAlive.component.dispose()
+                    : routeAlive.component.then(function(component) {component.dispose();});
                 router.routeAlives.splice(len, 1);
             }
         }
 
         if (!isUpdateAlive) {
             if (routeItem.Component) {
-                if (isComponent(routeItem.Component)) {
-                    routerAttachComponent(router, routeInfo);
-                }
-                else {
-                    routeItem.Component().then(
-                        function (Cmpt) { // eslint-disable-line
-                            if (isComponent(Cmpt)) {
-                                routeItem.Component = Cmpt;
+                router.routeAlives.push({
+                    id: routeItem.id,
+                    component: isComponent(routeItem.Component) ? routerAttachComponent(router, routeInfo)
+                        : routeItem.Component().then(
+                            function (Cmpt) { // eslint-disable-line
+                                if (isComponent(Cmpt)) {
+                                    routeItem.Component = Cmpt;
+                                }
+                                else if (Cmpt.__esModule && isComponent(Cmpt['default'])) {
+                                    routeItem.Component = Cmpt['default'];
+                                }
+                                return routerAttachComponent(router, routeInfo);
                             }
-                            else if (Cmpt.__esModule && isComponent(Cmpt['default'])) {
-                                routeItem.Component = Cmpt['default'];
-                            }
-                            routerAttachComponent(router, routeInfo);
-                        }
-                    );
-                }
+                        )
+                });
             }
             else {
                 routeItem.handler.call(router, routeInfo.data);
@@ -858,17 +871,14 @@
 
         component.attach(targetEl);
 
-        router.routeAlives.push({
-            component: component,
-            id: routeItem.id
-        });
-
         // component handler 同时存在
         if (typeof routeItem.handler === 'function') {
             setTimeout(function () {
                 routeItem.handler.call(router, routeInfo.data);
             });
         }
+
+        return component;
     }
 
 
