@@ -3,7 +3,7 @@
  * Copyright 2017 Baidu Inc. All rights reserved.
  */
 
-(function (root) {
+ (function (root) {
 
     /**
      * 元素选择器
@@ -719,7 +719,12 @@
                 referrer: e.referrer,
                 config: routeInfo && routeInfo.route.config,
                 data: routeInfo && routeInfo.data,
-                resume: next,
+                resume: function () {
+                    if (state === 0) {
+                        state = 1;
+                        doNext();
+                    }
+                },
                 suspend: function () {
                     state = 0;
                 },
@@ -736,26 +741,17 @@
             function doNext() {
                 if (state > 0) {
                     if (i < router.listeners.length) {
-                        router.listeners[i].call(router, listenerEvent);
-                        if (state > 0) {
-                            next();
-                        }
+                        var listener = router.listeners[i++];
+                        listener.call(router, listenerEvent);
                     }
                     else {
                         routeAction();
                     }
-                }
-            }
 
-            /**
-             * 运行下一个listener
-             *
-             * @inner
-             */
-            function next() {
-                state = 1;
-                i++;
-                doNext();
+                    if (state > 0) {
+                        doNext();
+                    }
+                }
             }
 
             /**
@@ -764,20 +760,19 @@
              * @inner
              */
             function routeAction() {
+                state = -1;
+
                 if (routeInfo) {
                     routerDoRoute(router, routeInfo);
                 }
                 else {
                     var len = router.routeAlives.length;
                     while (len--) {
-                        var component = router.routeAlives[len].component;
-                        component.dispose ? component.dispose() : component.then(function (component) {
-                            component.dispose();
-                        });
+                        router.routeAlives[len].component.dispose();
                         router.routeAlives.splice(len, 1);
                     }
                 }
-            };
+            }
 
             doNext();
         };
@@ -798,46 +793,36 @@
             var routeAlive = router.routeAlives[len];
 
             if (routeAlive.id === routeItem.id) {
-                // sync component
-                if (routeAlive.component.data) {
-                    routeAlive.component.data.set('route', routeInfo.data);
-                    if (typeof routeAlive.component.route === 'function') {
-                        routeAlive.component.route();
-                    }
-                } else {
-                    routeAlive.component.then(function(component) {
-                        component.data.set('route', routeInfo.data);
-                        if (typeof component.route === 'function') {
-                            component.route();
-                        }
-                    });
+                routeAlive.component.data.set('route', routeInfo.data);
+                if (typeof routeAlive.component.route === 'function') {
+                    routeAlive.component.route();
                 }
                 isUpdateAlive = true;
             }
             else {
-                routeAlive.component.dispose ? routeAlive.component.dispose()
-                    : routeAlive.component.then(function(component) {component.dispose();});
+                routeAlive.component.dispose();
                 router.routeAlives.splice(len, 1);
             }
         }
 
         if (!isUpdateAlive) {
             if (routeItem.Component) {
-                router.routeAlives.push({
-                    id: routeItem.id,
-                    component: isComponent(routeItem.Component) ? routerAttachComponent(router, routeInfo)
-                        : routeItem.Component().then(
-                            function (Cmpt) { // eslint-disable-line
-                                if (isComponent(Cmpt)) {
-                                    routeItem.Component = Cmpt;
-                                }
-                                else if (Cmpt.__esModule && isComponent(Cmpt['default'])) {
-                                    routeItem.Component = Cmpt['default'];
-                                }
-                                return routerAttachComponent(router, routeInfo);
+                if (isComponent(routeItem.Component)) {
+                    routerAttachComponent(router, routeInfo);
+                }
+                else {
+                    routeItem.Component().then(
+                        function (Cmpt) { // eslint-disable-line
+                            if (isComponent(Cmpt)) {
+                                routeItem.Component = Cmpt;
                             }
-                        )
-                });
+                            else if (Cmpt.__esModule && isComponent(Cmpt['default'])) {
+                                routeItem.Component = Cmpt['default'];
+                            }
+                            routerAttachComponent(router, routeInfo);
+                        }
+                    );
+                }
             }
             else {
                 routeItem.handler.call(router, routeInfo.data);
@@ -871,14 +856,17 @@
 
         component.attach(targetEl);
 
+        router.routeAlives.push({
+            component: component,
+            id: routeItem.id
+        });
+
         // component handler 同时存在
         if (typeof routeItem.handler === 'function') {
             setTimeout(function () {
                 routeItem.handler.call(router, routeInfo.data);
             });
         }
-
-        return component;
     }
 
 
