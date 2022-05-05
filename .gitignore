@@ -8,3 +8,10 @@ Thumbs.db
 *.swp
 *.gz
 .vscode/
+
+# Generated files
+.docusaurus
+.cache-loader
+
+# Production
+/build
