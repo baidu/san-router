@@ -1,7 +1,12 @@
-### 1.2.5
+### 2.0.0
 
-- [feature] add 允许添加 config 数组
-- [feature] 增加 withRoute 用于为 san 组件增加 `this.$router` 访问 router 实例，增加 `this.data.get('route')` 访问当前路由信息
+
+- [change] 删除路由相关组件的 route 数据项中的 config 属性
+- [change] 删除 router 监听器的第二参数 config。可由第一参数的属性 eventArg.config 获得匹配路由的配置项
+- [feature] router.add 方法支持数组参数，批量添加路由
+- [feature] 增加 withRoute 方法，支持内层组件的路由感知
+- [feature] 增加 createLink 方法，支持创建非默认路由的 Link 组件
+- [fix] 当路由 listener 中调用暂停再恢复时，异步组件初始化多次
 
 ### 1.2.4
 
