@@ -20,7 +20,7 @@ yarn add san-router
 
 ## 使用
 
-如需了解更多功能，请移步：[快速开始](https://baidu.github.io/san-router/docs/quick-start)
+如需了解更多功能，请访问 [快速开始](https://baidu.github.io/san-router/docs/quick-start)
 
 ```
 import {router, Link} from 'san-router';
@@ -45,3 +45,7 @@ router.start();
 ## CHANGELOG
 
 [CHANGELOG](https://github.com/baidu/san-router/blob/master/CHANGELOG.md)
+
+## License
+
+san-router is [MIT licensed](./LICENSE).
