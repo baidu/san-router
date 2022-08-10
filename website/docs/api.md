@@ -76,15 +76,40 @@ title: 'API'
 
 - `string` mode - 路由模式，`hash` 或 `html5`
 
+### locator.redirect
+
+使用：
+
+```router.locator.redirect({String}url[,{Object}options])```
+
+说明：
+
+用于跳转到某个 url 地址，并渲染该 url 对应的 san 组件。
+
+参数：
+
+- `string` url - 跳转地址
+- `boolean` options.force - 是否强制刷新
+
+### locator.reload
+
+使用：
+
+```router.locator.reload()```
+
+说明：
+
+用于刷新当前 url。
+
 ### push
 
 使用：
 
-```router.push({Object}url[,{Object}options])```
+```router.push({Object|string}url[,{Object}options])```
 
 说明：
 
-功能类似 `router.locator.redict` 方法，并增加了对 query 对象的处理。同时在 san 组件中可通过实例的 `$router` 对象访问当前路由实例：
+用于跳转到某个 url 地址并切换对应的视图，功能类似 `router.locator.redirect` 方法，并增加了对 query 对象的处理。同时在 san 组件中可通过实例的 `$router` 对象访问当前路由实例：
 
 ```javascript
 router.push({
@@ -113,7 +138,7 @@ this.$router.push({
 
 说明：
 
-用于启动路由。
+用于启动路由功能。
 
 ### stop
 
@@ -123,7 +148,7 @@ this.$router.push({
 
 说明：
 
-用于停止路由。
+用于停止路由功能。
 
 ## Link
 
@@ -143,3 +168,141 @@ this.$router.push({
 
 - `Function|Class ` component -  组件
 - `Object` router - san-router 实例
+
+## HTML5Locator & HashLocator
+
+用于监听 url 变化，修改 url 并触发 router 的跳转行为。前者基于 html5 的 history api 实现，后者基于 url 的 hash 实现。单独使用该对象无法触发 san 组件的视图切换，建议使用 `router.push` api。如果需要使用该对象，需要自己实现组件视图的切换逻辑。
+
+### on
+
+使用：
+
+```locator.on({string} type,{Function} fn)```
+
+说明：
+
+注册事件处理函数。
+
+### un
+
+使用：
+
+```locator.un({string} type,{Function} fn)```
+
+说明：
+
+删除事件处理函数。
+
+### fire
+
+使用：
+
+```locator.fire({string} type[,{*}args])```
+
+说明：
+
+触发事件。
+
+### start
+
+使用：
+
+```locator.start()```
+
+说明：
+
+用于启动路由监听与切换功能。
+
+### stop
+
+使用：
+
+```locator.stop()```
+
+说明：
+
+用于停止路由监听与切换功能。
+
+### redirect
+
+使用：
+
+```locator.redirect({String}url[,{Object}options])```
+
+说明：
+
+用于跳转到某个 url 地址，并触发 redirect 事件。
+
+参数：
+
+- `string` url - 跳转地址
+- `boolean` options.force - 路由规则
+
+
+### reload
+
+使用：
+
+```locator.reload()```
+
+说明：
+
+触发 redirect 事件，并且事件传递的参数为当前 url 以及上一次的 url。
+
+参数：
+
+- `string` url - 跳转地址
+- `boolean` options.force - 路由规则
+
+### redirect 事件
+
+说明：重定向事件，该事件用于渲染路由对应的 san 组件切换视图。
+
+参数：
+
+- `string` url - 目的地址
+- `string` referrer - 源地址
+
+## URL
+router 内部用于处理 url 的工具函数。
+
+### resolveURL
+使用：
+
+```resolveURL({String}url, {String}base)```
+
+说明：
+
+将 URL 中相对路径部分展开
+
+参数：
+
+- `string` url - 要展开的url
+- `string` base - 当前所属环境的url
+
+### parseURL
+
+使用：
+
+```parseURL({String}url)```
+
+说明：
+
+解析URL，返回包含path、query、queryString的对象
+
+参数：
+
+- `string` url - 要解析的url
+
+### stringifyURL
+使用：
+
+```stringifyURL({Object}source)```
+
+说明：
+
+将解析后的 URL 对象，转换成字符串
+
+参数：
+
+- `Object` source - 解析后的URL对象
