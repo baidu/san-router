@@ -20,7 +20,7 @@ title: '嵌套路由'
 +------------------+                  +-----------------+
 ```
 
-我们可以利用 san-router 提供的 `withRoute` 来实现上述的功能，`withRoute` 会在任意的 san 组件实例 `$router` 属性上挂在路由实例对象 `$router`，并在该组件 data 的 `route` 对象内添加路由信息。我们可以通过该路由信息获取到当前 url 对应的 query 数据，比如如下代码的动态路由参数 `query.name`。获取到 `name` 之后，我们可以利用 san 指令 `s-is` 动态地渲染 `name` 对应的组件。
+我们可以利用 san-router 提供的 `withRoute` 来实现上述的功能，`withRoute` 会在任意的 san 组件实例 `$router` 属性上挂载路由实例 `$router`，并在该组件 data 的 `route` 对象内添加路由信息。我们可以通过该路由信息获取到当前 url 对应的 query 数据，比如如下代码的动态路由参数 `query.name`。获取到 `name` 之后，我们可以利用 san 指令 `s-is` 动态地渲染 `name` 对应的组件。
 
 ```javascript
 // 获取路由实例

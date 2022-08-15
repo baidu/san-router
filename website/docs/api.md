@@ -76,30 +76,11 @@ title: 'API'
 
 - `string` mode - 路由模式，`hash` 或 `html5`
 
-### locator.redirect
-
-使用：
-
-```router.locator.redirect({String}url[,{Object}options])```
+### locator
 
 说明：
 
-用于跳转到某个 url 地址，并渲染该 url 对应的 san 组件。
-
-参数：
-
-- `string` url - 跳转地址
-- `boolean` options.force - 是否强制刷新
-
-### locator.reload
-
-使用：
-
-```router.locator.reload()```
-
-说明：
-
-用于刷新当前 url。
+[locator](/san-router/docs/api#Locator) 为 router 实例上的对象，可以利用 `router.locator.redirect` 实现跳转，利用 `router.locator.reload` 刷新当前路由。
 
 ### push
 
@@ -169,9 +150,9 @@ this.$router.push({
 - `Function|Class ` component -  组件
 - `Object` router - san-router 实例
 
-## HTML5Locator & HashLocator
+## Locator
 
-用于监听 url 变化，修改 url 并触发 router 的跳转行为。前者基于 html5 的 history api 实现，后者基于 url 的 hash 实现。单独使用该对象无法触发 san 组件的视图切换，建议使用 `router.push` api。如果需要使用该对象，需要自己实现组件视图的切换逻辑。
+Locator 用于监听 url 变化，修改 url 并触发 router 的跳转行为。分为两种 HTML5Locator 以及 HashLocator，前者基于 html5 的 history api 实现，后者基于 url 的 hash 实现。单独使用该对象无法触发 san 组件的视图切换，建议使用 `router.push` api。如果需要使用该对象，需要自己实现组件视图的切换逻辑。
 
 ### on
 
