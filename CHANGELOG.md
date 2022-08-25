@@ -1,5 +1,9 @@
-### 2.0.0
+### 2.0.1
 
+- [fix] router.push 方法，当不传入 path 并且传入 query 为空时，原有的 location 中的 query 仍被保留
+
+
+### 2.0.0
 
 - [change] 删除路由相关组件的 route 数据项中的 config 属性
 - [change] 删除 router 监听器的第二参数 config。可由第一参数的属性 eventArg.config 获得匹配路由的配置项
