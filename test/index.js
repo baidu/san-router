@@ -1348,6 +1348,42 @@ describe('Component $router', function() {
             }, 222)
         }, 222)
     });
+
+    it('use push with obj, clear by empty object query', function (done) {
+        var myApp;
+        var App = san.defineComponent({
+            initData: function () {
+                return {
+                    name: 'router'
+                };
+            },
+            template: '<p title="{{route.query.name || name}}">{{route.query.name || name}}</p>',
+            inited: function () {
+                myApp = this;
+            }
+        });
+
+        router.add({
+            rule: '/dr/11',
+            Component: App
+        });
+
+        location.hash = '/dr/11?name=erik';
+        setTimeout(function () {
+            var ps = document.getElementById('main').getElementsByTagName('p');
+            expect(ps[0].title).toBe('erik');
+
+            myApp.$router.push({
+                query: {}
+            });
+            setTimeout(function () {
+                expect(ps[0].title).toBe('router');
+                expect(location.hash).toBe('#/dr/11');
+
+                done();
+            }, 222)
+        }, 222)
+    });
 });
 
 describe('withRouter Component', function() {
