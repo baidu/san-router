@@ -640,10 +640,7 @@
      * @param {boolean?} options.force 是否强制刷新
      */
     Router.prototype.push = function (url, options) {
-        url = stringifyURL(url);
-        if (url) {
-            this.locator.redirect(url, options);
-        }
+        this.locator.redirect(stringifyURL(url), options);
     };
 
     /**
