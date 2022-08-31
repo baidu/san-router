@@ -1,8 +1,8 @@
 ---
 id: add-route
-sidebar_label: 添加路由
+sidebar_label: 配置路由
 slug: '/guide/add-route'
-title: '添加路由'
+title: '配置路由'
 ---
 
 ### 添加路由规则
