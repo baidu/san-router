@@ -13,6 +13,7 @@ module.exports = {
           },
           items: [
             "guide/add-route",
+            "guide/component-and-router",
             "guide/fetch-data",
             "guide/dynamic-route-matching",
             "guide/nested-routes",
