@@ -1,6 +1,6 @@
-import san from 'san';
+import type { ComponentDefineOptions} from 'san';
 
-type Component = san.SanComponentConfig<{}, {}> & {
+type Component = ComponentDefineOptions & {
   [k: string]: any
 } | Function | (() => Promise<any>)
 
@@ -32,13 +32,13 @@ interface Location {
   queryString?: string
 }
 
-class EventTarget {
+declare class EventTarget {
   on(type: string, fn: Function): void
   un(type: string, fn?: Function): void
   fire(type: string, args?: any[])
 }
 
-class Locator extends EventTarget {
+declare class Locator extends EventTarget {
   current: string
   referrer: string
 
@@ -93,12 +93,12 @@ export class Router {
   start(): void
   stop(): void
 
-  setMode(mode: Mode): router
+  setMode(mode: Mode): Router
 
   push(options: Location): void
   push(options: string): void
 
-  add(config: Config): router
+  add(config: Config | Config[]): Router
 }
 
 export const version = '1.2.3'
