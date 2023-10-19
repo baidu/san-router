@@ -3,8 +3,7 @@
  * Copyright 2017 Baidu Inc. All rights reserved.
  */
 
- (function (root) {
-
+(function (root) {
     /**
      * 元素选择器
      *
@@ -280,6 +279,18 @@
     }
 
     /**
+     * 根据目标路径创建 hash href 路径
+     *
+     * @param {string} to 目标路径
+     * @returns {string} href
+     */
+    function createHashHref(to) {
+        var href = location.href;
+        var hashIndex = href.indexOf('#');
+        return href.slice(0, hashIndex + 1) + to;
+    }
+
+    /**
      * hash 模式地址监听器
      *
      * @class
@@ -340,7 +351,11 @@
         if (isChanged) {
             this.referrer = referrer;
             this.current = url;
-            location.hash = url;
+            if (options.replace) {
+                location.replace(createHashHref(url));
+            } else {
+                location.hash = url;
+            }
         }
         else {
             referrer = this.referrer;
@@ -430,7 +445,7 @@
             this.referrer = referrer;
             this.current = url;
 
-            history.pushState({}, '', url);
+            history[options.replace ? 'replaceState' : 'pushState']({}, '', url);
         }
 
         if ((isChanged || options.force) && !options.silent) {
@@ -641,6 +656,19 @@
      */
     Router.prototype.push = function (url, options) {
         this.locator.redirect(stringifyURL(url), options);
+    };
+
+    /**
+     * 替换路由 replace
+     *
+     * @param {Object|string} url 路由地址
+     * @param {Object?} options 重定向的行为配置
+     * @param {boolean?} options.force 是否强制刷新
+     */
+    Router.prototype.replace = function (url, options) {
+        options = options || {};
+        options.replace = true
+        this.push(url, options);
     };
 
     /**
@@ -944,7 +972,7 @@
             this.$router = customRouter;
 
             this.data.set(
-                'route', 
+                'route',
                 customRouter.match(
                     customRouter.locator.current,
                     customRouter.locator.referrer
