@@ -666,9 +666,8 @@
      * @param {boolean?} options.force 是否强制刷新
      */
     Router.prototype.replace = function (url, options) {
-        options = options || {};
-        options.replace = true
-        this.push(url, options);
+        options = Object.assign({replace: true}, options);
+        this.locator.redirect(stringifyURL(url), options);
     };
 
     /**
