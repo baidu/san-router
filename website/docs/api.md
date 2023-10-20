@@ -111,6 +111,35 @@ this.$router.push({
 });
 ```
 
+### replace
+
+使用：
+
+```router.replace({Object|string}url[,{Object}options])```
+
+说明：
+
+与 push 类似，区别是该 api 用于替换历史栈中的当前记录来导航到一个新的 URL。在 san 组件中可通过实例的 `$router` 对象访问当前路由实例：
+
+```javascript
+router.replace({
+    query: {
+        name: 'erik',
+        sex: 1,
+        age: 18
+    }
+});
+
+// san 组件中
+this.$router.replace({
+    query: {
+        name: 'erik',
+        sex: 1,
+        age: 18
+    }
+});
+```
+
 ### start
 
 使用：

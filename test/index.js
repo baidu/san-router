@@ -1004,6 +1004,56 @@ describe('Component $router', function() {
         }, 222)
     });
 
+    it('use replace', function (done) {
+        var myApp;
+        var App = san.defineComponent({
+            initData: function () {
+                return {
+                    name: 'router'
+                };
+            },
+            template: '<p title="{{route.query.name || name}}">{{route.query.name || name}}</p>',
+            inited: function () {
+                myApp = this;
+            }
+        });
+
+        router.add({
+            rule: '/dr/2_1',
+            Component: App
+        });
+
+        router.add({
+            rule: '/dr/2_1/:name',
+            Component: App
+        });
+
+        location.hash = '/dr/2_1';
+        setTimeout(function () {
+            var ps = document.getElementById('main').getElementsByTagName('p');
+            expect(ps[0].title).toBe('router');
+            expect(myApp.data.get('route.config')).toBeUndefined();
+
+            myApp.$router.push('/dr/2_1/erik');
+
+            setTimeout(function () {
+                expect(ps[0].title).toBe('erik');
+                myApp.$router.replace('/dr/2_1/erikreplace');
+                setTimeout(function () {
+                    expect(ps[0].title).toBe('erikreplace');
+                    setTimeout(function () {
+                        history.back();
+                        setTimeout(function () {
+                            expect(ps[0].title).toBe('router');
+
+                            done();
+                        }, 222)
+                    }, 222)
+                }, 222)
+            }, 222)
+        }, 222)
+    });
+
     it('use push with obj, add query', function (done) {
         var myApp;
         var App = san.defineComponent({
@@ -1039,6 +1089,62 @@ describe('Component $router', function() {
                 expect(location.hash).toBe('#/dr/3?name=erik');
 
                 done();
+            }, 222)
+        }, 222)
+    });
+
+    it('use replace with obj, add query', function (done) {
+        var myApp;
+        var App = san.defineComponent({
+            initData: function () {
+                return {
+                    name: 'router'
+                };
+            },
+            template: '<p title="{{route.query.name || name}}">{{route.query.name || name}}</p>',
+            inited: function () {
+                myApp = this;
+            }
+        });
+
+        router.add({
+            rule: '/dr/3_1',
+            Component: App
+        });
+
+        router.add({
+            rule: '/dr/3_1/:name',
+            Component: App
+        });
+
+        location.hash = '/dr/3_1';
+        setTimeout(function () {
+            var ps = document.getElementById('main').getElementsByTagName('p');
+            expect(ps[0].title).toBe('router');
+            expect(myApp.data.get('route.config')).toBeUndefined();
+
+            myApp.$router.push('/dr/3_1/erik');
+
+            setTimeout(function () {
+                expect(ps[0].title).toBe('erik');
+                myApp.$router.replace({
+                    path: '/dr/3_1',
+                    query: {
+                        name: 'erikreplace'
+                    }
+                });
+                setTimeout(function () {
+                    expect(ps[0].title).toBe('erikreplace');
+                    expect(location.hash).toBe('#/dr/3_1?name=erikreplace');
+                    setTimeout(function () {
+                        history.back();
+                        setTimeout(function () {
+                            expect(ps[0].title).toBe('router');
+
+                            done();
+                        }, 222)
+                    }, 222)
+                }, 222)
             }, 222)
         }, 222)
     });
@@ -1080,6 +1186,60 @@ describe('Component $router', function() {
         }, 222)
     });
 
+    it('use replace with obj, add queryString', function (done) {
+        var myApp;
+        var App = san.defineComponent({
+            initData: function () {
+                return {
+                    name: 'router'
+                };
+            },
+            template: '<p title="{{route.query.name || name}}">{{route.query.name || name}}</p>',
+            inited: function () {
+                myApp = this;
+            }
+        });
+
+        router.add({
+            rule: '/dr/4_1',
+            Component: App
+        });
+
+        router.add({
+            rule: '/dr/4_1/:name',
+            Component: App
+        });
+
+        location.hash = '/dr/4_1';
+        setTimeout(function () {
+            var ps = document.getElementById('main').getElementsByTagName('p');
+            expect(ps[0].title).toBe('router');
+            expect(myApp.data.get('route.config')).toBeUndefined();
+
+            myApp.$router.push('/dr/4_1/erik');
+
+            setTimeout(function () {
+                expect(ps[0].title).toBe('erik');
+                myApp.$router.replace({
+                    path: '/dr/4_1',
+                    queryString: 'name=erikreplace'
+                });
+                setTimeout(function () {
+                    expect(ps[0].title).toBe('erikreplace');
+                    expect(location.hash).toBe('#/dr/4_1?name=erikreplace');
+                    setTimeout(function () {
+                        history.back();
+                        setTimeout(function () {
+                            expect(ps[0].title).toBe('router');
+
+                            done();
+                        }, 222)
+                    }, 222)
+                }, 222)
+            }, 222)
+        }, 222)
+    });
+
     it('use push with obj, add query, no path', function (done) {
         var myApp;
         var App = san.defineComponent({
@@ -1112,6 +1272,45 @@ describe('Component $router', function() {
 
             setTimeout(function () {
                 expect(location.hash).toBe('#/dr/5?name=erik');
+                expect(ps[0].title).toBe('erik');
+
+                done();
+            }, 222)
+        }, 222)
+    });
+
+    it('use replace with obj, add query, no path', function (done) {
+        var myApp;
+        var App = san.defineComponent({
+            initData: function () {
+                return {
+                    name: 'router'
+                };
+            },
+            template: '<p title="{{route.query.name || name}}">{{route.query.name || name}}</p>',
+            inited: function () {
+                myApp = this;
+            }
+        });
+
+        router.add({
+            rule: '/dr/5_1',
+            Component: App
+        });
+
+        location.hash = '/dr/5_1';
+        setTimeout(function () {
+            var ps = document.getElementById('main').getElementsByTagName('p');
+            expect(ps[0].title).toBe('router');
+
+            myApp.$router.replace({
+                query: {
+                    name: 'erik'
+                }
+            });
+
+            setTimeout(function () {
+                expect(location.hash).toBe('#/dr/5_1?name=erik');
                 expect(ps[0].title).toBe('erik');
 
                 done();
@@ -1163,6 +1362,49 @@ describe('Component $router', function() {
         }, 222)
     });
 
+    it('use replace with obj, fill by query', function (done) {
+        var myApp;
+        var App = san.defineComponent({
+            initData: function () {
+                return {
+                    name: 'router'
+                };
+            },
+            template: '<p title="{{route.query.name || name}}">{{route.query.name || name}}</p>',
+            inited: function () {
+                myApp = this;
+            }
+        });
+
+        router.add({
+            rule: '/dr/6_1',
+            Component: App
+        });
+
+        router.add({
+            rule: '/dr/6_1/:name',
+            Component: App
+        });
+
+        location.hash = '/dr/6_1';
+        setTimeout(function () {
+            var ps = document.getElementById('main').getElementsByTagName('p');
+            expect(ps[0].title).toBe('router');
+
+            myApp.$router.replace({
+                path: '/dr/6_1/:name',
+                query: {
+                    name: 'erik'
+                }
+            });
+            setTimeout(function () {
+                expect(ps[0].title).toBe('erik');
+                expect(location.hash).toBe('#/dr/6_1/erik');
+
+                done();
+            }, 222)
+        }, 222)
+    });
 
     it('use push with obj, fill by params', function (done) {
         var myApp;
@@ -1208,6 +1450,50 @@ describe('Component $router', function() {
         }, 222)
     });
 
+    it('use replace with obj, fill by params', function (done) {
+        var myApp;
+        var App = san.defineComponent({
+            initData: function () {
+                return {
+                    name: 'router'
+                };
+            },
+            template: '<p title="{{route.query.name || name}}">{{route.query.name || name}}</p>',
+            inited: function () {
+                myApp = this;
+            }
+        });
+
+        router.add({
+            rule: '/dr/7_1',
+            Component: App
+        });
+
+        router.add({
+            rule: '/dr/7_1/:name',
+            Component: App
+        });
+
+        location.hash = '/dr/7_1';
+        setTimeout(function () {
+            var ps = document.getElementById('main').getElementsByTagName('p');
+            expect(ps[0].title).toBe('router');
+
+            myApp.$router.replace({
+                path: '/dr/7_1/:name',
+                params: {
+                    name: 'erik'
+                }
+            });
+            setTimeout(function () {
+                expect(ps[0].title).toBe('erik');
+                expect(location.hash).toBe('#/dr/7_1/erik');
+
+                done();
+            }, 222)
+        }, 222)
+    });
+
 
     it('use push with obj, add more queries', function (done) {
         var myApp;
@@ -1243,6 +1529,49 @@ describe('Component $router', function() {
             setTimeout(function () {
                 expect(ps[0].title).toBe('erik');
                 expect(location.hash.indexOf('#/dr/8')).toBe(0);
+                expect(location.hash).toContain('name=erik');
+                expect(location.hash).toContain('age=18');
+                expect(location.hash).toContain('sex=1');
+
+                done();
+            }, 222)
+        }, 222)
+    });
+
+    it('use replace with obj, add more queries', function (done) {
+        var myApp;
+        var App = san.defineComponent({
+            initData: function () {
+                return {
+                    name: 'router'
+                };
+            },
+            template: '<p title="{{route.query.name || name}}">{{route.query.name || name}}</p>',
+            inited: function () {
+                myApp = this;
+            }
+        });
+
+        router.add({
+            rule: '/dr/8_1',
+            Component: App
+        });
+
+        location.hash = '/dr/8_1';
+        setTimeout(function () {
+            var ps = document.getElementById('main').getElementsByTagName('p');
+            expect(ps[0].title).toBe('router');
+
+            myApp.$router.replace({
+                query: {
+                    name: 'erik',
+                    sex: 1,
+                    age: 18
+                }
+            });
+            setTimeout(function () {
+                expect(ps[0].title).toBe('erik');
+                expect(location.hash.indexOf('#/dr/8_1')).toBe(0);
                 expect(location.hash).toContain('name=erik');
                 expect(location.hash).toContain('age=18');
                 expect(location.hash).toContain('sex=1');
@@ -1339,6 +1668,57 @@ describe('Component $router', function() {
         }, 222)
     });
 
+    notIE && it('use replace with obj, fill by params, html5 mode', function (done) {
+
+        router.setMode('html5');
+
+        var myApp;
+        var App = san.defineComponent({
+            initData: function () {
+                return {
+                    name: 'router'
+                };
+            },
+            template: '<p title="{{route.query.name || name}}">{{route.query.name || name}}</p>',
+            inited: function () {
+                myApp = this;
+            }
+        });
+
+        router.add({
+            rule: '/dr/10_1',
+            Component: App
+        });
+
+        router.add({
+            rule: '/dr/10_1/:name',
+            Component: App
+        });
+
+
+        router.push('/dr/10_1');
+        setTimeout(function () {
+            var ps = document.getElementById('main').getElementsByTagName('p');
+            expect(ps[0].title).toBe('router');
+
+            myApp.$router.replace({
+                path: '/dr/10_1/:name',
+                params: {
+                    name: 'erik'
+                }
+            });
+            setTimeout(function () {
+                expect(ps[0].title).toBe('erik');
+                expect(location.pathname).toBe('/dr/10_1/erik');
+
+                history.back();
+                history.back();
+
+                setTimeout(done, 200);
+            }, 222)
+        }, 222)
+    });
+
     notIE && it('use push with obj, fill by query, html5 mode', function (done) {
 
         router.setMode('html5');
@@ -1385,7 +1765,102 @@ describe('Component $router', function() {
         }, 222)
     });
 
-    
+    notIE && it('use replace with obj, fill by query, html5 mode', function (done) {
+
+        router.setMode('html5');
+
+        var myApp;
+        var App = san.defineComponent({
+            initData: function () {
+                return {
+                    name: 'router'
+                };
+            },
+            template: '<p title="{{route.query.name || name}}">{{route.query.name || name}}</p>',
+            inited: function () {
+                myApp = this;
+            }
+        });
+
+        router.add({
+            rule: '/dr/11_1',
+            Component: App
+        });
+
+
+        router.push('/dr/11_1');
+        setTimeout(function () {
+            var ps = document.getElementById('main').getElementsByTagName('p');
+            expect(ps[0].title).toBe('router');
+
+            myApp.$router.replace({
+                query: {
+                    name: 'erik'
+                }
+            });
+            setTimeout(function () {
+                expect(ps[0].title).toBe('erik');
+                expect(location.pathname).toBe('/dr/11_1');
+                expect(location.href).toContain('name=erik');
+
+                history.back();
+                history.back();
+
+                setTimeout(done, 200);
+            }, 222)
+        }, 222)
+    });
+
+    notIE && it('use replace', function (done) {
+        router.setMode('html5');
+        var myApp;
+        var App = san.defineComponent({
+            initData: function () {
+                return {
+                    name: 'router'
+                };
+            },
+            template: '<p title="{{route.query.name || name}}">{{route.query.name || name}}</p>',
+            inited: function () {
+                myApp = this;
+            }
+        });
+
+        router.add({
+            rule: '/dr/12',
+            Component: App
+        });
+
+        router.add({
+            rule: '/dr/12/:name',
+            Component: App
+        });
+
+        router.push('/dr/12');
+        setTimeout(function () {
+            var ps = document.getElementById('main').getElementsByTagName('p');
+            expect(ps[0].title).toBe('router');
+            expect(myApp.data.get('route.config')).toBeUndefined();
+
+            myApp.$router.push('/dr/12/erik');
+
+            setTimeout(function () {
+                expect(ps[0].title).toBe('erik');
+                myApp.$router.replace('/dr/12/erikreplace');
+                setTimeout(function () {
+                    expect(ps[0].title).toBe('erikreplace');
+                    setTimeout(function () {
+                        history.back();
+                        setTimeout(function () {
+                            expect(ps[0].title).toBe('router');
+
+                            done();
+                        }, 222)
+                    }, 222)
+                }, 222)
+            }, 222)
+        }, 222)
+    });
 });
 
 describe('withRouter Component', function() {
@@ -1416,7 +1891,7 @@ describe('withRouter Component', function() {
             attached() {
                 routeData = this.data.get('route');
             },
-            
+
             route() {
                 routeCalled = true;
             }
@@ -1568,7 +2043,7 @@ describe('withRouter Component', function() {
             attached() {
                 attached++;
             }
-            
+
             route() {
                 routed++;
             }
@@ -1629,11 +2104,11 @@ describe('withRouter Component', function() {
                 'home': Home,
                 'about': About
             },
-            
+
             attached() {
                 attached++;
             },
-            
+
             route() {
                 routed++;
             }
@@ -1669,13 +2144,13 @@ describe('withRouter Component', function() {
             setTimeout(function () {
                 expect(attached).toBe(1);
                 expect(routed).toBe(2);
-                
+
                 expect(document.getElementById('main').getElementsByTagName('h3')[0].innerHTML)
                     .toContain('home');
                 expect(document.getElementById('main').getElementsByTagName('b').length).toBe(1);
-                
+
                 expect(document.getElementById('main').getElementsByTagName('b')[0].innerHTML)
-                    .toContain('home');   
+                    .toContain('home');
 
                 done();
             }, 222);
@@ -1722,7 +2197,7 @@ describe('Async Component', function() {
         });
 
         location.hash = '/ac/6';
-    
+
         setTimeout(function () {
             expect(document.querySelectorAll('.async-app').length ).toBe(1);
             done();

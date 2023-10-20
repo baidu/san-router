@@ -1,3 +1,7 @@
+### 2.0.2
+
+- [feature] 新增 router.replace 方法，支持替换 URL
+
 ### 2.0.1
 
 - [fix] router.push 方法，当不传入 path 并且传入 query 为空时，原有的 location 中的 query 仍被保留
