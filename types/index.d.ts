@@ -111,4 +111,7 @@ export class Router {
   add(config: RouteConfig | RouteConfig[]): Router;
 }
 
+
+export function withRoute(ComponentClass: Component, router?: Router): Component
+
 export const version = '2.0.2';
