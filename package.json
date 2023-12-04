@@ -5,7 +5,7 @@
   "scripts": {
     "pretest": "npm run build",
     "test": "http-server -c-1 -o /test",
-    "build": "rm -rf dist && mkdir dist && uglifyjs index.js -mco dist/san-router.js",
+    "build": "rm -rf dist && mkdir dist && uglifyjs index.js -mco dist/san-router.min.js",
     "docs:start": "docusaurus start --config ./website/docusaurus.config.js",
     "docs:build": "docusaurus build --config ./website/docusaurus.config.js"
   },
