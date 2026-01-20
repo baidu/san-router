@@ -2172,7 +2172,7 @@ describe('Async Component', function() {
         setTimeout(function () {done();}, 200)
     });
 
-    it('Async Component attached once', function (done) {
+    it('attached once', function (done) {
         var App = san.defineComponent({
             template: '<div class="async-app">something for nothing.</div>'
         });
@@ -2190,17 +2190,56 @@ describe('Async Component', function() {
             }
         ]);
 
-        router.listen(e => {
-            e.suspend();
-            // doSomething()
-            e.resume();
-        });
-
         location.hash = '/ac/6';
 
         setTimeout(function () {
             expect(document.querySelectorAll('.async-app').length ).toBe(1);
             done();
+        }, 100)
+    });
+
+    it('resovled after route change', function (done) {
+        var App = san.defineComponent({
+            template: '<div><u>just test</u></div>'
+        });
+
+        var App2 = san.defineComponent({
+            template: '<div><b>just test</b></div>'
+        });
+
+        router.add([
+            {
+                rule: '/ac/71',
+                Component: function() {
+                    return new Promise(function (resolve) {
+                        setTimeout(function () {
+                            resolve(App);
+                        }, 500);
+                    });
+                }
+            },
+            {
+                rule: '/ac/72',
+                Component: function() {
+                    return new Promise(function (resolve) {
+                        setTimeout(function () {
+                            resolve(App2);
+                        }, 500);
+                    });
+                }
+            }
+        ]);
+
+
+        location.hash = '/ac/71';
+
+        setTimeout(function () {
+            location.hash = '/ac/72';
+            setTimeout(function () {
+                expect(document.getElementById('main').getElementsByTagName('u').length).toBe(0);
+                expect(document.getElementById('main').getElementsByTagName('b').length).toBe(1);
+                done();
+            }, 1500)
         }, 100)
     });
 });

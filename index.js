@@ -721,6 +721,7 @@
      */
     function routerGetRedirectListener(router) {
         return function (e) {
+            router.__routeInfoWithAsyncCmpt = null;
             var url = parseURL(e.url);
             var routeInfo = router.match(url, e.referrer);
             var listenerSource = routeInfo ? routeInfo.data : url;
@@ -835,17 +836,25 @@
                     routerAttachComponent(router, routeInfo);
                 }
                 else {
-                    routeItem.Component().then(
-                        function (Cmpt) { // eslint-disable-line
-                            if (isComponent(Cmpt)) {
-                                routeItem.Component = Cmpt;
+                    router.__routeInfoWithAsyncCmpt = routeInfo;
+                    if (!routeItem.asyncPromise) {
+                        routeItem.asyncPromise = routeItem.Component().then(
+                            function (Cmpt) { // eslint-disable-line
+                                if (isComponent(Cmpt)) {
+                                    routeItem.Component = Cmpt;
+                                }
+                                else if (Cmpt.__esModule && isComponent(Cmpt['default'])) {
+                                    routeItem.Component = Cmpt['default'];
+                                }
                             }
-                            else if (Cmpt.__esModule && isComponent(Cmpt['default'])) {
-                                routeItem.Component = Cmpt['default'];
-                            }
+                        );
+                    }
+
+                    routeItem.asyncPromise.then(function () {
+                        if (router.__routeInfoWithAsyncCmpt === routeInfo) {
                             routerAttachComponent(router, routeInfo);
                         }
-                    );
+                    });
                 }
             }
             else {
@@ -1085,7 +1094,7 @@
         parseURL: parseURL,
         stringifyURL: stringifyURL,
 
-        version: '2.0.2'
+        version: '2.0.3'
     };
 
 
