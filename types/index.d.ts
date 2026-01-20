@@ -8,7 +8,7 @@ type Dictionary<T> = { [key: string]: T };
 
 type Query = Dictionary<string | (string | null)[] | null | undefined>;
 
-type Mode = 'hash' | 'history';
+type Mode = 'hash' | 'html5';
 
 interface RouteConfig {
   rule: string | RegExp;
