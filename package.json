@@ -20,7 +20,7 @@
     "uglify-js": "^2.7.5"
   },
   "main": "index.js",
-  "unpkg": "dist/san-router",
+  "unpkg": "dist/san-router.min.js",
   "files": [
     "dist",
     "types/*.d.ts",
